@@ -5,3 +5,17 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Space Grotesk", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
 }
+
+@keyframes prayer-sweep {
+  0% {
+    transform: translateX(-130%);
+  }
+
+  100% {
+    transform: translateX(330%);
+  }
+}
+
+.animate-prayer-sweep {
+  animation: prayer-sweep 1.6s ease-in-out infinite;
+}

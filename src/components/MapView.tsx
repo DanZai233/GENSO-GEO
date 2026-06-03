@@ -10,6 +10,8 @@ interface MapViewProps {
   lang: Language;
 }
 
+type PlaceOverride = { name: string, country: string, type: string };
+
 // Highly enriched landmarks database across multiple countries/themes (Japan, China, Europe, USA)
 const REGIONAL_DATABASE = [
   // Japan (日本本州)
@@ -52,11 +54,44 @@ const REGIONAL_DATABASE = [
   { name: 'Salem Woods, Massachusetts', lat: 42.5195, lng: -70.8967, country: 'United States', type: 'Witchcraft Assembly Woods' }
 ];
 
+function PrayerLoading({ title, message, hint }: { title: string; message: string; hint: string }) {
+  return (
+    <div className="w-full relative overflow-hidden rounded-xl border border-rose-100 bg-[#fffdfa] p-4 md:p-5 shadow-inner">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-700 via-amber-400 to-rose-700" />
+      <div className="absolute inset-0 opacity-[0.08] bg-[repeating-linear-gradient(135deg,#7f1d1d_0,#7f1d1d_1px,transparent_1px,transparent_16px)] pointer-events-none" />
+      <div className="relative flex items-center gap-4">
+        <div className="relative h-16 w-16 shrink-0 rounded-full border border-rose-100 bg-[#f8f3e8] shadow-sm grid place-items-center">
+          <div className="absolute inset-1 rounded-full border border-dashed border-rose-300 animate-spin [animation-duration:5s]" />
+          <img src="/logo.svg" alt="" className="h-10 w-10 object-contain drop-shadow-sm" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-black text-rose-700 uppercase">GENSO-GEO</p>
+          <h3 className="mt-1 text-xl md:text-2xl font-serif font-black text-slate-900 tracking-normal">
+            {title}
+          </h3>
+          <p className="mt-1 text-xs md:text-sm font-bold text-[#7c2d12] leading-relaxed">
+            {message}
+          </p>
+          <p className="mt-1 text-[10px] md:text-xs text-slate-500">
+            {hint}
+          </p>
+        </div>
+      </div>
+      <div className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-rose-100">
+        <div className="absolute inset-y-0 w-1/3 rounded-full bg-gradient-to-r from-rose-700 via-amber-400 to-rose-700 animate-prayer-sweep" />
+      </div>
+    </div>
+  );
+}
+
 export default function MapView({ onSave, lang }: MapViewProps) {
   const t = translations[lang];
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
+  const generationInFlightRef = useRef(false);
+  const searchInFlightRef = useRef(false);
+  const triggerLookupRef = useRef<(lat: number, lng: number, overridePlace?: PlaceOverride) => void>(() => {});
 
   // View state & tab settings (Map Pinning vs Narrative Description Resonance)
   const [activeTab, setActiveTab] = useState<'map' | 'desc'>('map');
@@ -80,6 +115,18 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchingMap, setSearchingMap] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+
+  const beginGeneration = () => {
+    if (generationInFlightRef.current) return false;
+    generationInFlightRef.current = true;
+    setLoading(true);
+    return true;
+  };
+
+  const endGeneration = () => {
+    generationInFlightRef.current = false;
+    setLoading(false);
+  };
 
   // Initialize MapLibre Map
   useEffect(() => {
@@ -121,8 +168,9 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
     // Handle clicks
     map.on('click', (e) => {
+      if (generationInFlightRef.current) return;
       const { lng, lat } = e.lngLat;
-      triggerLookup(lat, lng);
+      triggerLookupRef.current(lat, lng);
     });
 
     const resizeObserver = new ResizeObserver(() => {
@@ -243,10 +291,10 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   };
 
   // Execute geographical coordinate lookup
-  const triggerLookup = async (lat: number, lng: number, overridePlace?: { name: string, country: string, type: string }) => {
+  const triggerLookup = async (lat: number, lng: number, overridePlace?: PlaceOverride) => {
+    if (!beginGeneration()) return;
     setSelectedLocation({ lat, lng });
     setGeneratedName(null);
-    setLoading(true);
 
     if (mapRef.current) {
       if (markerRef.current) {
@@ -339,19 +387,22 @@ export default function MapView({ onSave, lang }: MapViewProps) {
       console.error(err);
       alert(t.alertError);
     } finally {
-      setLoading(false);
+      endGeneration();
     }
   };
 
+  triggerLookupRef.current = triggerLookup;
+
   // Perform specific descriptive/narrative lookup
   const triggerDescriptionResonance = async () => {
+    if (generationInFlightRef.current) return;
     if (!description.trim()) {
       alert(lang === 'zh' ? '请填写角色描述！' : lang === 'ja' ? 'キャラクターの説明を入力してください！' : 'Please provide character descriptions!');
       return;
     }
+    if (!beginGeneration()) return;
 
     setGeneratedName(null);
-    setLoading(true);
 
     // Pick a regional anchor from the selected geo pool to weave into geography
     let pool = REGIONAL_DATABASE;
@@ -432,12 +483,13 @@ export default function MapView({ onSave, lang }: MapViewProps) {
       console.error(err);
       alert(t.alertError);
     } finally {
-      setLoading(false);
+      endGeneration();
     }
   };
 
   // Peeking border gap (Random Map selection)
   const handleRandomGenerate = () => {
+    if (generationInFlightRef.current) return;
     let pool = REGIONAL_DATABASE;
     if (geoRange === 'kanto') {
       pool = REGIONAL_DATABASE.filter(item => item.country === 'Japan' && (item.type.includes('Kanto') || item.name.includes('Tokyo') || item.type.includes('Kamakura')));
@@ -466,7 +518,9 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
   // Search submit handler using OpenStreetMap Nominatim Free Search API
   const handleSearchSubmit = async () => {
+    if (generationInFlightRef.current || searchInFlightRef.current) return;
     if (!searchQuery.trim()) return;
+    searchInFlightRef.current = true;
     setSearchingMap(true);
     setSearchResults([]);
 
@@ -486,12 +540,14 @@ export default function MapView({ onSave, lang }: MapViewProps) {
     } catch (err) {
       console.error(err);
     } finally {
+      searchInFlightRef.current = false;
       setSearchingMap(false);
     }
   };
 
   // When a search result option is clicked, teleport to coordinates and trigger generator
   const handleSelectSearchResult = (result: any) => {
+    if (generationInFlightRef.current) return;
     const lat = parseFloat(result.lat);
     const lng = parseFloat(result.lon);
     
@@ -512,14 +568,14 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden w-full h-full bg-[#fcfbf9] relative">
+    <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full h-full bg-[#fcfbf9] relative">
       
       {/* Decorative Traditional Border ornaments */}
       <div className="absolute top-0 bottom-0 left-0 w-1 bg-red-800 z-30 opacity-70 hidden md:block" />
       <div className="absolute top-0 bottom-0 right-0 w-1 bg-red-800 z-30 opacity-70 hidden md:block" />
 
       {/* Eastern Talisman Inspired Sidebar */}
-      <aside className="w-96 bg-[#fdfcf7] border-r border-[#e9e4d9] hidden md:flex flex-col shrink-0 shadow-xl overflow-hidden relative z-20">
+      <aside className="order-2 md:order-1 w-full md:w-96 h-[44vh] md:h-full bg-[#fdfcf7] border-t md:border-t-0 md:border-r border-[#e9e4d9] flex flex-col shrink-0 shadow-xl overflow-hidden relative z-20">
         
         {/* Subtle clouds background or floral stamp */}
         <div className="absolute top-3 right-4 opacity-5 pointer-events-none select-none text-[84px]">
@@ -530,19 +586,21 @@ export default function MapView({ onSave, lang }: MapViewProps) {
         <div className="flex border-b border-[#e9e4d9] bg-[#f7f5ed] shrink-0 p-1">
           <button
             onClick={() => setActiveTab('map')}
-            className={`flex-1 py-3 text-xs font-bold tracking-widest text-center transition-all rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${activeTab === 'map' ? 'bg-white text-rose-700 shadow-sm border border-[#e2dcce]' : 'text-slate-500 hover:text-slate-800'}`}
+            disabled={loading}
+            className={`flex-1 py-3 text-xs font-bold tracking-widest text-center transition-all rounded-md flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeTab === 'map' ? 'bg-white text-rose-700 shadow-sm border border-[#e2dcce]' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <span>🏮</span> {lang === 'zh' ? '灵脉地图定位' : lang === 'ja' ? '霊脈地図' : 'Map Leylines'}
           </button>
           <button
             onClick={() => setActiveTab('desc')}
-            className={`flex-1 py-3 text-xs font-bold tracking-widest text-center transition-all rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${activeTab === 'desc' ? 'bg-white text-rose-700 shadow-sm border border-[#e2dcce]' : 'text-slate-500 hover:text-slate-800'}`}
+            disabled={loading}
+            className={`flex-1 py-3 text-xs font-bold tracking-widest text-center transition-all rounded-md flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${activeTab === 'desc' ? 'bg-white text-rose-700 shadow-sm border border-[#e2dcce]' : 'text-slate-500 hover:text-slate-800'}`}
           >
             <span>🔮</span> {lang === 'zh' ? '描述宿命之契' : lang === 'ja' ? 'キャラクター叙事' : 'Narrative Sync'}
           </button>
         </div>
 
-        <div className="p-5 space-y-5 flex-1 overflow-y-auto">
+        <div className="p-4 md:p-5 space-y-4 md:space-y-5 flex-1 overflow-y-auto">
           
           {/* TAB 1: GEOGRAPHICAL BARRIER GENERATOR */}
           {activeTab === 'map' ? (
@@ -558,42 +616,48 @@ export default function MapView({ onSave, lang }: MapViewProps) {
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                   <button 
                     onClick={() => setGeoRange('national')}
-                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'national' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                    disabled={loading}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${geoRange === 'national' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
                   >
                     <span className="mr-2">🇯🇵</span> {t.geoNational}
                   </button>
 
                   <button 
                     onClick={() => setGeoRange('kanto')}
-                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'kanto' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                    disabled={loading}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${geoRange === 'kanto' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
                   >
                     <span className="mr-2">🍁</span> {t.geoKanto}
                   </button>
 
                   <button 
                     onClick={() => setGeoRange('china')}
-                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'china' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                    disabled={loading}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${geoRange === 'china' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
                   >
                     <span className="mr-2">🇨🇳</span> {t.geoChina}
                   </button>
 
                   <button 
                     onClick={() => setGeoRange('europe')}
-                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'europe' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                    disabled={loading}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${geoRange === 'europe' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
                   >
                     <span className="mr-2">🏰</span> {t.geoEurope}
                   </button>
 
                   <button 
                     onClick={() => setGeoRange('america')}
-                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'america' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                    disabled={loading}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${geoRange === 'america' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
                   >
                     <span className="mr-2">🦅</span> {t.geoAmerica}
                   </button>
 
                   <button 
                     onClick={() => setGeoRange('custom')}
-                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'custom' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                    disabled={loading}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${geoRange === 'custom' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
                   >
                     <span className="mr-2">☯</span> {t.geoCustom}
                   </button>
@@ -608,7 +672,8 @@ export default function MapView({ onSave, lang }: MapViewProps) {
                 <select 
                   value={characterStyle}
                   onChange={(e) => setCharacterStyle(e.target.value as any)}
-                  className="w-full p-2.5 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 focus:outline-none focus:border-rose-400 font-medium"
+                  disabled={loading}
+                  className="w-full p-2.5 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 focus:outline-none focus:border-rose-400 font-medium disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <option value="shrine">{t.styleShrine}</option>
                   <option value="academic">{t.styleAcademic}</option>
@@ -623,7 +688,8 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
               <button 
                 onClick={handleRandomGenerate}
-                className="w-full py-4 bg-rose-700 text-white rounded-xl font-bold text-xs shadow-lg shadow-rose-200/50 hover:bg-rose-800 transition-all flex items-center justify-center gap-2 tracking-widest select-none cursor-pointer border-t border-rose-500"
+                disabled={loading}
+                className="w-full py-4 bg-rose-700 text-white rounded-xl font-bold text-xs shadow-lg shadow-rose-200/50 hover:bg-rose-800 transition-all flex items-center justify-center gap-2 tracking-widest select-none cursor-pointer border-t border-rose-500 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none disabled:border-slate-200 disabled:cursor-not-allowed"
               >
                 <Compass className="w-4 h-4" />
                 <span>{t.btnRandom}</span>
@@ -642,7 +708,8 @@ export default function MapView({ onSave, lang }: MapViewProps) {
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full h-24 p-3 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:border-rose-400 focus:outline-none font-sans leading-relaxed resize-none"
+                  disabled={loading}
+                  className="w-full h-24 p-3 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:border-rose-400 focus:outline-none font-sans leading-relaxed resize-none disabled:cursor-not-allowed disabled:opacity-60"
                   placeholder={t.descPlaceholder}
                 />
               </section>
@@ -655,7 +722,8 @@ export default function MapView({ onSave, lang }: MapViewProps) {
                 <select 
                   value={characterStyle}
                   onChange={(e) => setCharacterStyle(e.target.value as any)}
-                  className="w-full p-2.5 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 focus:outline-none focus:border-rose-400 font-medium"
+                  disabled={loading}
+                  className="w-full p-2.5 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 focus:outline-none focus:border-rose-400 font-medium disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <option value="shrine">{t.styleShrine}</option>
                   <option value="academic">{t.styleAcademic}</option>
@@ -677,7 +745,8 @@ export default function MapView({ onSave, lang }: MapViewProps) {
                   <select 
                     value={geoRange}
                     onChange={(e) => setGeoRange(e.target.value as any)}
-                    className="flex-1 p-2 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 focus:outline-none font-medium"
+                    disabled={loading}
+                    className="flex-1 p-2 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 focus:outline-none font-medium disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <option value="national">{t.geoNational}</option>
                     <option value="kanto">{t.geoKanto}</option>
@@ -695,9 +764,10 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
               <button 
                 onClick={triggerDescriptionResonance}
-                className="w-full py-4 bg-amber-700 hover:bg-amber-800 text-white rounded-xl font-bold text-xs shadow-lg shadow-amber-200/50 transition-all flex items-center justify-center gap-2 tracking-widest select-none cursor-pointer border-t border-amber-500"
+                disabled={loading}
+                className="w-full py-4 bg-amber-700 hover:bg-amber-800 text-white rounded-xl font-bold text-xs shadow-lg shadow-amber-200/50 transition-all flex items-center justify-center gap-2 tracking-widest select-none cursor-pointer border-t border-amber-500 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none disabled:border-slate-200 disabled:cursor-not-allowed"
               >
-                <Send className="w-4 h-4" />
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 <span>{t.btnDescSync}</span>
               </button>
             </div>
@@ -725,30 +795,34 @@ export default function MapView({ onSave, lang }: MapViewProps) {
       </aside>
 
       {/* Main Interactive Map wrapper */}
-      <section className="flex-1 flex flex-col relative h-full">
+      <section className="order-1 md:order-2 flex-1 flex flex-col relative min-h-[42vh] md:min-h-0 h-full">
         
         {/* The map canvas, customized soft parchment style */}
-        <div ref={mapContainerRef} className="flex-1 w-full h-full bg-[#eae5dc]" />
+        <div ref={mapContainerRef} className={`flex-1 w-full h-full bg-[#eae5dc] ${loading ? 'cursor-wait' : ''}`} />
+        {loading && (
+          <div className="absolute inset-0 z-[9] bg-[#fffdfa]/25 backdrop-blur-[1px] cursor-wait" />
+        )}
 
         {/* Floating Leyline Search Bar */}
-        <div className="absolute top-5 right-5 z-20 w-80 max-w-[calc(100vw-40px)]">
+        <div className="absolute top-3 left-3 right-3 md:top-5 md:left-auto md:right-5 z-20 md:w-80 md:max-w-[calc(100vw-40px)]">
           <div className="bg-[#fdfcf9]/95 backdrop-blur-md rounded-xl p-2 shadow-xl border border-[#e3ded4] flex gap-1.5 items-center">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSearchSubmit();
+                if (e.key === 'Enter' && !loading) handleSearchSubmit();
               }}
+              disabled={loading}
               placeholder={t.searchPlaceholder}
-              className="flex-1 bg-transparent border-none text-xs text-slate-800 placeholder-slate-400 focus:outline-none px-2 py-1 font-sans"
+              className="flex-1 bg-transparent border-none text-xs text-slate-800 placeholder-slate-400 focus:outline-none px-2 py-1 font-sans disabled:cursor-not-allowed disabled:opacity-60"
             />
             <button
               onClick={handleSearchSubmit}
-              disabled={searchingMap}
-              className="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all select-none cursor-pointer flex items-center gap-1.5 disabled:bg-slate-400 shrink-0"
+              disabled={searchingMap || loading}
+              className="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all select-none cursor-pointer flex items-center gap-1.5 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed shrink-0"
             >
-              {searchingMap ? (
+              {searchingMap || loading ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
                 <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" />
@@ -764,7 +838,8 @@ export default function MapView({ onSave, lang }: MapViewProps) {
                 <button
                   key={idx}
                   onClick={() => handleSelectSearchResult(result)}
-                  className="w-full text-left p-2.5 px-3.5 hover:bg-rose-50 transition-colors cursor-pointer text-xs flex flex-col gap-0.5"
+                  disabled={loading}
+                  className="w-full text-left p-2.5 px-3.5 hover:bg-rose-50 transition-colors cursor-pointer text-xs flex flex-col gap-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <span className="font-bold text-slate-800 truncate block">
                     🏮 {result.display_name.split(',')[0]}
@@ -779,23 +854,24 @@ export default function MapView({ onSave, lang }: MapViewProps) {
         </div>
 
         {/* Elegant Float guidance overlay for Touch */}
-        <div className="absolute top-5 left-1/2 -translate-x-1/2 bg-[#fdfcf9]/95 backdrop-blur px-5 py-2.5 rounded-full shadow-lg border border-[#e3ded4] flex items-center gap-2 pointer-events-none z-10 select-none">
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 bg-[#fdfcf9]/95 backdrop-blur px-5 py-2.5 rounded-full shadow-lg border border-[#e3ded4] hidden lg:flex items-center gap-2 pointer-events-none z-10 select-none">
           <div className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
           <span className="font-bold text-[11px] tracking-widest text-[#5c4a37]">{t.tipClickMap}</span>
         </div>
 
         {/* BOTTOM ACTIVE RESULT PANEL */}
         {(selectedLocation || loading) && (
-          <div className="absolute bottom-6 left-6 right-6 md:left-8 md:right-8 bg-[#fdfcf7] hover:bg-[#fffffb] rounded-2xl p-6 shadow-2xl border-2 border-[#e6decf] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-5 z-10 transition-all duration-300">
+          <div className="absolute bottom-3 left-3 right-3 md:bottom-6 md:left-8 md:right-8 bg-[#fdfcf7] hover:bg-[#fffffb] rounded-xl md:rounded-2xl p-4 md:p-6 shadow-2xl border-2 border-[#e6decf] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 md:gap-5 z-10 transition-all duration-300 max-h-[46vh] md:max-h-[70vh] overflow-y-auto">
             
             {/* Sakura blossom corner decorations */}
             <div className="absolute top-0 right-0 w-8 h-8 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-rose-400 to-transparent pointer-events-none" />
             
             {loading ? (
-              <div className="flex items-center gap-4 text-rose-800 p-2 py-4">
-                <Loader2 className="w-6 h-6 animate-spin text-rose-700" />
-                <p className="text-sm font-bold tracking-widest animate-pulse font-serif italic">{activeTab === 'desc' ? t.descTuning : t.loadingText}</p>
-              </div>
+              <PrayerLoading
+                title={t.prayerLoadingTitle}
+                message={activeTab === 'desc' ? t.descTuning : t.loadingText}
+                hint={t.prayerLoadingHint}
+              />
             ) : generatedName ? (
               <>
                 <div className="flex-1 space-y-2">
@@ -832,7 +908,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
                   <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
                     
                     {/* Native localized display */}
-                    <h2 className="text-3xl font-serif font-black tracking-tight text-slate-800">
+                    <h2 className="text-xl md:text-3xl font-serif font-black tracking-tight text-slate-800">
                       {lang === 'zh' 
                         ? (generatedName.fullName_zh || generatedName.fullName) 
                         : lang === 'ja'
@@ -874,7 +950,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
                   </div>
 
                   {/* Poetic inspiration */}
-                  <p className="text-xs text-slate-600 italic bg-[#FAF8F5] p-3 rounded-xl border border-[#eae5da] leading-relaxed font-sans mt-2">
+                  <p className="text-[11px] md:text-xs text-slate-600 italic bg-[#FAF8F5] p-3 rounded-xl border border-[#eae5da] leading-relaxed font-sans mt-2">
                     ✍️ <strong className="font-serif not-italic text-[#7c2d12]">{t.inspirationLabel}:</strong> {lang === 'zh' 
                       ? (generatedName.inspiration_zh || generatedName.inspiration)
                       : lang === 'ja'

@@ -3,6 +3,7 @@ import { ViewMode, NameEntry, Language } from './types';
 import MapView from './components/MapView';
 import CollectionView from './components/CollectionView';
 import Navbar from './components/Navbar';
+import OnboardingGuide from './components/OnboardingGuide';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('map');
@@ -10,10 +11,18 @@ export default function App() {
   const [lang, setLangState] = useState<Language>(() => {
     return (localStorage.getItem('user-selected-language') as Language) || 'zh';
   });
+  const [guideOpen, setGuideOpen] = useState(() => {
+    return localStorage.getItem('genso-geo-guide-seen') !== 'true';
+  });
 
   const setLang = (newLang: Language) => {
     setLangState(newLang);
     localStorage.setItem('user-selected-language', newLang);
+  };
+
+  const closeGuide = () => {
+    setGuideOpen(false);
+    localStorage.setItem('genso-geo-guide-seen', 'true');
   };
 
   useEffect(() => {
@@ -47,6 +56,7 @@ export default function App() {
         collectionCount={collection.length} 
         lang={lang} 
         setLang={setLang} 
+        openGuide={() => setGuideOpen(true)}
       />
       
       <main className="flex-1 relative overflow-hidden flex flex-col min-h-0">
@@ -56,6 +66,8 @@ export default function App() {
           <CollectionView lang={lang} collection={collection} onRemove={removeFromCollection} />
         )}
       </main>
+
+      <OnboardingGuide open={guideOpen} lang={lang} setLang={setLang} onClose={closeGuide} />
     </div>
   );
 }

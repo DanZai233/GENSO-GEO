@@ -26,13 +26,13 @@ export default function CollectionView({ collection, onRemove, lang }: Collectio
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-[#EAE9E4]">
+    <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#EAE9E4]">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
           <h2 className="text-sm font-bold text-slate-900 uppercase tracking-widest">{t.collectionsTitle}</h2>
           <span className="text-[10px] font-bold bg-slate-200 text-slate-600 px-2.5 py-0.5 rounded-full">{collection.length} {t.savedCount}</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           {collection.map(entry => (
             <CharacterCard key={entry.id} entry={entry} onRemove={onRemove} lang={lang} />
           ))}
@@ -99,7 +99,7 @@ function CharacterCard({ entry, onRemove, lang }: { key?: string; entry: NameEnt
   return (
     <div className="group flex flex-col">
       {/* Printable Card Area */}
-      <div ref={cardRef} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col relative">
+      <div ref={cardRef} className="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col relative">
         <div className="flex justify-between items-start mb-3">
           <div className="w-10 h-10 bg-rose-50 border border-rose-150 rounded-full flex items-center justify-center text-rose-700 font-serif font-bold text-lg select-none">
             {lang === 'ja' ? '☯' : lang === 'zh' ? (entry.lastName_zh ? entry.lastName_zh.charAt(0) : '博') : (entry.firstName_en ? entry.firstName_en.charAt(0) : 'G')}
@@ -109,8 +109,8 @@ function CharacterCard({ entry, onRemove, lang }: { key?: string; entry: NameEnt
           </button>
         </div>
         <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest mb-1.5">{t.originLabel}: {displayOrigin}</p>
-        <div className="flex items-baseline space-x-2">
-          <h4 className="text-2xl font-serif font-black tracking-tight text-slate-800">{namePrimary}</h4>
+        <div className="flex items-baseline flex-wrap gap-x-2 gap-y-1">
+          <h4 className="text-xl md:text-2xl font-serif font-black tracking-tight text-slate-800">{namePrimary}</h4>
           <span className="text-xs font-light text-slate-400 font-sans tracking-wide">{nameSecondary}</span>
         </div>
 

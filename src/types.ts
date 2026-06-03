@@ -44,8 +44,8 @@ export interface NameEntry {
   inspiration: string;
   characterArchetype: string;
   createdAt: number;
+
 }
 
 export type ViewMode = 'map' | 'collection';
 export type Language = 'zh' | 'en' | 'ja';
-

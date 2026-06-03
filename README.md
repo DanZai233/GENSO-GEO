@@ -1,46 +1,129 @@
-# GENSO-GEO ☯ 幻想霊脉帖
-> **Gensokyo Geographical Name Generator & Spellcard Ledger**
+# GENSO-GEO / 幻想霊脈帖
 
-GENSO-GEO is an immersive, beautifully crafted geographical name generator that channels the poetic mysticism of *Touhou Project* (东方Project). It allows writers, game designers, and fans to weave celestial character names, titles (二つ名), and spellcard origins from real-world map coordinates and narrative descriptions.
+GENSO-GEO is an open-source Touhou-inspired geo-fantasy naming tool. It turns real-world map locations or character descriptions into multilingual character names, titles, inspirations, and spellcard-style records.
 
----
+中文来说，它像一份临时的《幻想乡地缘名帖》：点一下现实地图的灵脉，或者写下一段角色设定，让网站生成中文、英文、日文和罗马音的名字。它不是替创作者做最终决定，而是把“第一缕灵感”整理成可以继续打磨的设定卡。
 
-## ⛩️ Core Features
+Live site: [genso-geo.danzaii.cn](https://genso-geo.danzaii.cn)  
+GitHub: [github.com/DanZai233/GENSO-GEO](https://github.com/DanZai233/GENSO-GEO)  
+Blog: [blog.danzaii.cn](https://blog.danzaii.cn/)  
+Works: [works.danzaii.cn](https://works.danzaii.cn/)
 
-### 1. 📍 Great Barrier Leyline Pins (地图定位模式)
-*   **Interactive Spiritual Meridian Map:** Explore a custom parchment-styled interactive map to pin coordinates anywhere in the world.
-*   **Geographical Presets:** Target focused leyline pools like **Kanto Dev**, **All-Japan Great Barrier**, **Ancient Cathay (China)**, **Gothic Spires (Europe)**, or manual boundary gaps.
-*   **Live Reverse-Geocode Resonance:** Resolves real latitude & longitude values into local spiritual nodes, mapping them into Touhou's Shinto, Buddhist, ghost, and yokai atmospheres.
+## Design Intent
 
-### 2. 🔮 Narrative Destiny Resonance (描述共鸣模式)
-*   **Description Adaptation Engine:** Input raw prose describing character visuals, personality, clothing, or backstories.
-*   **Theme Integration:** The engine processes the prose along with regional leyline settings to reveal names that resonate with the character's core narrative.
-*   **Dynamic Pathfinding:** Integrates deep semantic understanding of Japanese-flavored folklore to generate fated identities.
+- Give writers, TRPG players, fan creators, and naming enjoyers a playful first draft for place-bound characters.
+- Blend real geography with a shrine-boundary fantasy mood without exposing model/provider details to end users.
+- Keep the generated record useful across languages: Chinese, English, Japanese, and Romaji.
+- Make the app usable on desktop, tablet, and mobile, with a beginner guide on first visit.
 
-### 3. 🎨 Authentic Touhou Signature Generation
-*   **Holistic Quad-Linguistic Ledger:** Every character card compiles names natively across four registers:
-    *   **Han (汉语):** Classic poetic Chinese transliterations.
-    *   **Japanese (日本語):** Authentic Kanji and Kana representations (e.g., *博麗 霊夢*).
-    *   **English:** Western-styled formatting.
-    *   **Phonetic Romaji:** Accurate Hepburn Romanization (e.g., *Hakurei Reimu*).
-*   **二つ名 Titles:** Captivating descriptors matching the naming rules of classic legends.
-*   **Poetic Inspiration Text:** Original generated folklore tracing the name and spellcards to local landmarks.
+## New User Flow
 
-### 4. 🗄️ Chronicles of Gensokyo Legends (求闻史纪)
-*   **Interactive Ledger:** Review saved records, complete with a clean list interface.
-*   **Exportable Spellcard Cartridges:** Materialize cards into beautiful high-resolution **PNG image downloads** for offline reference, avatar use, or tabletop gaming.
+1. Choose a language on first entry.
+2. Read the Hakurei Shrine-style guide explaining purpose, usage, and links.
+3. Use Map Leylines to click or search a real-world location.
+4. Pick a style preset, or switch to Narrative Sync and write a character description.
+5. Save good results to the local Chronicles collection.
+6. Export a spellcard-style PNG when you want a portable character card.
 
----
+## Features
 
-## 🎨 Visual Identity & Aesthetic Craft
-*   **Miko Crimson & Parchment Palette:** Built on a gentle off-white canvas with deep charcoal fonts, bordered by crimson accents and Shinto ornaments.
-*   **Dynamic Markers:** Interactive coordinates bloom on the map as pulsing red talismans when targeted.
-*   **Spacious negative space:** Layout optimized for readability on both widescreen desktops and touch-screen devices.
+- Multi-device React/Vite frontend for desktop, tablet, and mobile.
+- First-visit language selection and Touhou-style onboarding guide.
+- Map mode with MapLibre, OpenStreetMap tiles, Nominatim search, and reverse geocoding.
+- Narrative mode that combines character descriptions with regional geography.
+- Frontend request lock and “少女祈祷中～” loading transition to prevent repeat submissions.
+- Local browser collection with PNG card export.
+- Backend provider switcher for Gemini, Volcengine Ark, and other OpenAI-compatible providers.
+- Vercel-ready static frontend plus serverless `/api/*` functions.
+- User-facing UI does not reveal which model or provider generated the result.
 
----
+## Local Development
 
-## 🛠️ Technology Stack
-*   **Client-Side Frontend:** React 18 with TypeScript and **Vite** as the developer toolchain.
-*   **Interactive Mapping:** MapLibre GL integrated with OpenStreetMap Nominatim API for world-wide geocoding and reverse-search coordinates.
-*   **Server-Side Backend:** Custom Express server to proxy Gemini requests, keeping API secrets hidden.
-*   **AI Processing Core:** Powered by the modern `@google/genai` TypeScript SDK on the server, running optimized instruction templates.
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## AI Provider Configuration
+
+The frontend always calls:
+
+- `POST /api/generate-name`
+- `POST /api/generate-description-name`
+
+The backend selects the model provider through environment variables.
+
+### Gemini
+
+```bash
+AI_PROVIDER=gemini
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-3.5-flash
+```
+
+### Volcengine Ark / 火山引擎方舟
+
+```bash
+AI_PROVIDER=volcengine
+VOLCENGINE_API_KEY=...
+VOLCENGINE_MODEL=...
+VOLCENGINE_BASE_URL=https://ark.cn-beijing.volces.com/api/v3
+```
+
+`VOLCENGINE_MODEL` should be the Ark endpoint ID or model endpoint name from your 火山引擎方舟 console.
+
+### Other OpenAI-Compatible Providers
+
+```bash
+AI_PROVIDER=openai-compatible
+OPENAI_COMPATIBLE_API_KEY=...
+OPENAI_COMPATIBLE_BASE_URL=https://provider.example.com/v1
+OPENAI_COMPATIBLE_MODEL=provider-model-name
+```
+
+Optional generation controls:
+
+```bash
+AI_TEMPERATURE=0.85
+AI_MAX_TOKENS=2000
+```
+
+## Vercel Deployment
+
+This repo is configured for Vercel:
+
+- Build command: `npm run build`
+- Output directory: `dist`
+- API functions: `api/*.ts`
+- Function max duration: `300s`
+
+Set the same environment variables in Vercel Project Settings before deploying. For 火山引擎, you will need:
+
+- `AI_PROVIDER=volcengine`
+- `VOLCENGINE_API_KEY`
+- `VOLCENGINE_MODEL`
+- Optional: `VOLCENGINE_BASE_URL`
+
+Deploy:
+
+```bash
+npx vercel deploy --prod --yes
+```
+
+## Scripts
+
+```bash
+npm run dev          # Local Express + Vite middleware server
+npm run build        # Vercel/static frontend build
+npm run build:server # Optional standalone Express production bundle
+npm run lint         # TypeScript check
+```
+
+## Related
+
+- Project article: [blog.danzaii.cn](https://blog.danzaii.cn/)
+- Works index: [works.danzaii.cn](https://works.danzaii.cn/)
+- Author GitHub: [github.com/DanZai233](https://github.com/DanZai233)
