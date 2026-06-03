@@ -35,8 +35,8 @@ export default function OnboardingGuide({ open, lang, setLang, onClose }: Onboar
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#231915]/45 backdrop-blur-sm flex items-center justify-center p-3 md:p-6">
-      <div className="relative w-full max-w-4xl max-h-[92vh] overflow-hidden rounded-2xl border border-[#eadfca] bg-[#fffdf8] shadow-2xl">
+    <div className="fixed inset-0 z-50 bg-[#231915]/45 backdrop-blur-sm flex items-start md:items-center justify-center overflow-y-auto p-3 md:p-6">
+      <div className="relative my-3 md:my-0 w-full max-w-4xl max-h-none md:max-h-[92vh] overflow-visible md:overflow-hidden rounded-2xl border border-[#eadfca] bg-[#fffdf8] shadow-2xl">
         <div className="absolute inset-0 opacity-[0.08] bg-[repeating-linear-gradient(135deg,#7f1d1d_0,#7f1d1d_1px,transparent_1px,transparent_18px)] pointer-events-none" />
         <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-rose-800 via-amber-400 to-rose-800" />
 
@@ -88,7 +88,7 @@ export default function OnboardingGuide({ open, lang, setLang, onClose }: Onboar
           </aside>
 
           {phase === "language" ? (
-            <section className="relative p-5 md:p-7 overflow-y-auto max-h-[92vh] flex flex-col justify-center">
+            <section className="relative p-5 md:p-7 overflow-visible md:overflow-y-auto max-h-none md:max-h-[92vh] flex flex-col justify-start md:justify-center">
               <p className="text-[10px] font-black tracking-[0.18em] text-rose-700 uppercase flex items-center gap-2">
                 <Languages className="h-3.5 w-3.5" />
                 Language Gate
@@ -120,7 +120,7 @@ export default function OnboardingGuide({ open, lang, setLang, onClose }: Onboar
               </button>
             </section>
           ) : (
-          <section className="relative p-5 md:p-7 overflow-y-auto max-h-[92vh]">
+          <section className="relative p-5 md:p-7 overflow-visible md:overflow-y-auto max-h-none md:max-h-[92vh]">
             <div className="pr-10">
               <p className="text-[10px] font-black tracking-[0.18em] text-rose-700 uppercase flex items-center gap-2">
                 <Sparkles className="h-3.5 w-3.5" />

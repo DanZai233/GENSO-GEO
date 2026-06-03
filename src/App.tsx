@@ -49,7 +49,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen bg-[#F7F6F2] text-slate-800 flex flex-col font-sans overflow-hidden">
+    <div className="min-h-dvh md:h-dvh bg-[#F7F6F2] text-slate-800 flex flex-col font-sans overflow-y-auto md:overflow-hidden">
       <Navbar 
         viewMode={viewMode} 
         setViewMode={setViewMode} 
@@ -59,7 +59,7 @@ export default function App() {
         openGuide={() => setGuideOpen(true)}
       />
       
-      <main className="flex-1 relative overflow-hidden flex flex-col min-h-0">
+      <main className="flex-1 relative overflow-visible md:overflow-hidden flex flex-col md:min-h-0">
         {viewMode === 'map' ? (
           <MapView lang={lang} onSave={saveToCollection} />
         ) : (

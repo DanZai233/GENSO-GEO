@@ -568,14 +568,14 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full h-full bg-[#fcfbf9] relative">
+    <div className="flex-1 flex flex-col md:flex-row overflow-visible md:overflow-hidden w-full h-auto md:h-full bg-[#fcfbf9] relative">
       
       {/* Decorative Traditional Border ornaments */}
       <div className="absolute top-0 bottom-0 left-0 w-1 bg-red-800 z-30 opacity-70 hidden md:block" />
       <div className="absolute top-0 bottom-0 right-0 w-1 bg-red-800 z-30 opacity-70 hidden md:block" />
 
       {/* Eastern Talisman Inspired Sidebar */}
-      <aside className="order-2 md:order-1 w-full md:w-96 h-[44vh] md:h-full bg-[#fdfcf7] border-t md:border-t-0 md:border-r border-[#e9e4d9] flex flex-col shrink-0 shadow-xl overflow-hidden relative z-20">
+      <aside className="order-2 md:order-1 w-full md:w-96 h-auto md:h-full bg-[#fdfcf7] border-t md:border-t-0 md:border-r border-[#e9e4d9] flex flex-col shrink-0 shadow-xl overflow-visible md:overflow-hidden relative z-20">
         
         {/* Subtle clouds background or floral stamp */}
         <div className="absolute top-3 right-4 opacity-5 pointer-events-none select-none text-[84px]">
@@ -600,7 +600,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
           </button>
         </div>
 
-        <div className="p-4 md:p-5 space-y-4 md:space-y-5 flex-1 overflow-y-auto">
+        <div className="p-4 md:p-5 space-y-4 md:space-y-5 md:flex-1 overflow-visible md:overflow-y-auto">
           
           {/* TAB 1: GEOGRAPHICAL BARRIER GENERATOR */}
           {activeTab === 'map' ? (
@@ -795,10 +795,10 @@ export default function MapView({ onSave, lang }: MapViewProps) {
       </aside>
 
       {/* Main Interactive Map wrapper */}
-      <section className="order-1 md:order-2 flex-1 flex flex-col relative min-h-[42vh] md:min-h-0 h-full">
+      <section className="order-1 md:order-2 flex-1 flex flex-col relative min-h-0 h-auto md:h-full">
         
         {/* The map canvas, customized soft parchment style */}
-        <div ref={mapContainerRef} className={`flex-1 w-full h-full bg-[#eae5dc] ${loading ? 'cursor-wait' : ''}`} />
+        <div ref={mapContainerRef} className={`w-full h-[56dvh] min-h-[360px] md:h-full md:flex-1 bg-[#eae5dc] ${loading ? 'cursor-wait' : ''}`} />
         {loading && (
           <div className="absolute inset-0 z-[9] bg-[#fffdfa]/25 backdrop-blur-[1px] cursor-wait" />
         )}
@@ -861,7 +861,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
         {/* BOTTOM ACTIVE RESULT PANEL */}
         {(selectedLocation || loading) && (
-          <div className="absolute bottom-3 left-3 right-3 md:bottom-6 md:left-8 md:right-8 bg-[#fdfcf7] hover:bg-[#fffffb] rounded-xl md:rounded-2xl p-4 md:p-6 shadow-2xl border-2 border-[#e6decf] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 md:gap-5 z-10 transition-all duration-300 max-h-[46vh] md:max-h-[70vh] overflow-y-auto">
+          <div className="relative md:absolute md:bottom-6 md:left-8 md:right-8 m-3 md:m-0 bg-[#fdfcf7] hover:bg-[#fffffb] rounded-xl md:rounded-2xl p-4 md:p-6 shadow-2xl border-2 border-[#e6decf] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 md:gap-5 z-10 transition-all duration-300 max-h-none md:max-h-[70vh] overflow-visible md:overflow-y-auto">
             
             {/* Sakura blossom corner decorations */}
             <div className="absolute top-0 right-0 w-8 h-8 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-rose-400 to-transparent pointer-events-none" />
