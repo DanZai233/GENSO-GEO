@@ -27,6 +27,14 @@ export interface NameEntry {
   inspiration_ja: string;
   characterArchetype_ja: string;
 
+  fullName_romaji?: string;
+  firstName_romaji?: string;
+  lastName_romaji?: string;
+
+  // Custom coordinates for retroactive map positioning
+  lat?: number;
+  lng?: number;
+
   // Fallbacks for older entries
   placeName: string;
   country: string;

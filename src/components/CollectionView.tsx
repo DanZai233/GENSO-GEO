@@ -42,7 +42,7 @@ export default function CollectionView({ collection, onRemove, lang }: Collectio
   );
 }
 
-function CharacterCard({ entry, onRemove, lang }: { entry: NameEntry, onRemove: (id: string) => void, lang: Language }) {
+function CharacterCard({ entry, onRemove, lang }: { key?: string; entry: NameEntry, onRemove: (id: string) => void, lang: Language }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
 
@@ -114,7 +114,27 @@ function CharacterCard({ entry, onRemove, lang }: { entry: NameEntry, onRemove: 
           <span className="text-xs font-light text-slate-400 font-sans tracking-wide">{nameSecondary}</span>
         </div>
 
-        <div className="mt-2 text-[10px] inline-flex self-start px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-100 rounded font-medium">
+        {/* Holistic Multilingual Name Register Grid (CN, JA, EN, Romaji) */}
+        <div className="mt-2 text-[10px] grid grid-cols-2 gap-x-2 gap-y-1 bg-rose-50/25 p-2 rounded-lg border border-rose-100/40 font-mono text-slate-600">
+          <div className="flex items-center gap-1">
+            <span className="text-rose-700 font-bold font-serif shadow-sm">汉:</span> 
+            <span className="truncate">{entry.fullName_zh || entry.fullName}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-rose-700 font-bold font-serif shadow-sm">日:</span> 
+            <span className="truncate">{entry.fullName_ja || entry.fullName}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-rose-700 font-bold font-serif shadow-sm">英:</span> 
+            <span className="truncate">{entry.fullName_en || entry.fullName}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[#a11f3d] font-bold font-serif shadow-sm">音:</span> 
+            <span className="truncate font-sans font-semibold text-amber-900">{entry.fullName_romaji || entry.fullName_en}</span>
+          </div>
+        </div>
+
+        <div className="mt-3 text-[10px] inline-flex self-start px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-100 rounded font-medium">
           {t.typeLabel}: {displayArchetype}
         </div>
         

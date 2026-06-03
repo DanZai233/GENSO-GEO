@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { NameEntry, Language } from '../types';
-import { Loader2, Sparkles, MapPin, Compass } from 'lucide-react';
+import { Loader2, Sparkles, MapPin, Compass, Flame, BookOpen, Send, Globe } from 'lucide-react';
 import { translations } from '../utils/translations';
 
 interface MapViewProps {
@@ -10,24 +10,46 @@ interface MapViewProps {
   lang: Language;
 }
 
-// Preset Premium Locations across Japan
+// Highly enriched landmarks database across multiple countries/themes (Japan, China, Europe, USA)
 const REGIONAL_DATABASE = [
-  { name: 'Kiyomizu-dera, Kyoto', lat: 34.9948, lng: 135.7850, country: 'Japan', type: 'Kyoto Special' },
-  { name: 'Arashiyama Forest, Kyoto', lat: 35.0156, lng: 135.6715, country: 'Japan', type: 'Kyoto Special' },
+  // Japan (日本本州)
+  { name: 'Kiyomizu-dera, Kyoto', lat: 34.9948, lng: 135.7850, country: 'Japan', type: 'Kyoto Sanctuary' },
+  { name: 'Arashiyama Forest, Kyoto', lat: 35.0156, lng: 135.6715, country: 'Japan', type: 'Folkloric Woods' },
   { name: 'Shinjuku Gyoen, Tokyo', lat: 35.6852, lng: 139.7101, country: 'Japan', type: 'Kanto Capital' },
-  { name: 'Akihabara Tech Town, Tokyo', lat: 35.6997, lng: 139.7719, country: 'Japan', type: 'Kanto Capital' },
-  { name: 'Yuigahama Coast, Kamakura', lat: 35.3082, lng: 139.5422, country: 'Japan', type: 'Kamakura District' },
-  { name: 'Gokurakuji Temple, Kamakura', lat: 35.3093, lng: 139.5284, country: 'Japan', type: 'Kamakura District' },
-  { name: 'Historic Shirakawa-go, Gifu', lat: 36.2562, lng: 136.9060, country: 'Japan', type: 'Traditional Village' },
-  { name: 'Lake Suwa Shrine, Nagano', lat: 36.0461, lng: 138.1064, country: 'Japan', type: 'Folkloric Lake' },
-  { name: 'Fuji Summit, Yamanashi', lat: 35.3606, lng: 138.7274, country: 'Japan', type: 'Holy Mountain' },
-  { name: 'Itsukushima Tori, Hiroshima', lat: 34.2960, lng: 132.3211, country: 'Japan', type: 'Scenic Shrine' },
-  { name: 'Otaru Blue Canal, Hokkaido', lat: 43.1907, lng: 141.0064, country: 'Japan', type: 'Hokkaido North' },
-  { name: 'Dotonbori Neon, Osaka', lat: 34.6687, lng: 135.5013, country: 'Japan', type: 'Kansai Hub' },
-  { name: 'Senso-ji Asakusa, Tokyo', lat: 35.7148, lng: 139.7967, country: 'Japan', type: 'Old Tokyo' },
-  { name: 'Nikko Ancient Forest, Tochigi', lat: 36.7581, lng: 139.5989, country: 'Japan', type: 'Mystery Woods' },
-  { name: 'Hakone Hot Springs, Kanagawa', lat: 35.2324, lng: 139.1069, country: 'Japan', type: 'Volcanic valley' },
-  { name: 'Matsumoto Imperial Castle, Nagano', lat: 36.2380, lng: 137.9691, country: 'Japan', type: 'Castle Town' }
+  { name: 'Akihabara Tech Town, Tokyo', lat: 35.6997, lng: 139.7719, country: 'Japan', type: 'Kanto Electric Town' },
+  { name: 'Yuigahama Coast, Kamakura', lat: 35.3082, lng: 139.5422, country: 'Japan', type: 'Kamakura Coastline' },
+  { name: 'Gokurakuji Temple, Kamakura', lat: 35.3093, lng: 139.5284, country: 'Japan', type: 'Ancient Temple' },
+  { name: 'Historic Shirakawa-go, Gifu', lat: 36.2562, lng: 136.9060, country: 'Japan', type: 'Snowy Mystic Village' },
+  { name: 'Lake Suwa Shrine, Nagano', lat: 36.0461, lng: 138.1064, country: 'Japan', type: 'Dragon God Waters' },
+  { name: 'Fuji Summit, Yamanashi', lat: 35.3606, lng: 138.7274, country: 'Japan', type: 'Holy Mountain of Japan' },
+  { name: 'Itsukushima Shrine, Hiroshima', lat: 34.2960, lng: 132.3211, country: 'Japan', type: 'Maritime Torii' },
+  { name: 'Otaru Blue Canal, Hokkaido', lat: 43.1907, lng: 141.0064, country: 'Japan', type: 'Northern Lights Port' },
+  { name: 'Dotonbori Neon, Osaka', lat: 34.6687, lng: 135.5013, country: 'Japan', type: 'Kansai Metropolis' },
+  { name: 'Senso-ji Asakusa, Tokyo', lat: 35.7148, lng: 139.7967, country: 'Japan', type: 'Old Edo Outpost' },
+
+  // China (华夏神州古代名胜)
+  { name: 'West Lake, Hangzhou', lat: 30.2440, lng: 120.1430, country: 'China', type: 'Mystic Serene Lake' },
+  { name: 'Forbidden City, Beijing', lat: 39.9163, lng: 116.3972, country: 'China', type: 'Imperial Purple Palace' },
+  { name: 'Yellow Mountain, Anhui', lat: 30.1299, lng: 118.1751, country: 'China', type: 'Taoist Cloud Peaks' },
+  { name: 'Suzhou Classical Garden, Jiangsu', lat: 31.3204, lng: 120.6133, country: 'China', type: 'Quiet Scholar Pond' },
+  { name: 'Potala Palace, Lhasa', lat: 29.6577, lng: 91.1172, country: 'China', type: 'Sacred High Sanctuary' },
+  { name: 'Jiuzhaigou Pools, Sichuan', lat: 33.2613, lng: 103.9186, country: 'China', type: 'Rainbow Colored Basin' },
+  { name: 'Mount Tai Divine Summit, Shandong', lat: 36.2555, lng: 117.1002, country: 'China', type: 'Sacred Heavenly Summit' },
+
+  // Europe (西方悠久圣域 / UK, France, Germany, Italy, Greece)
+  { name: 'Westminster Abbey, London', lat: 51.4994, lng: -0.1273, country: 'United Kingdom', type: 'Gothic Cathedral' },
+  { name: 'Stonehenge, Wiltshire', lat: 51.1789, lng: -1.8262, country: 'United Kingdom', type: 'Prehistoric Druid Circle' },
+  { name: 'Eiffel Tower, Paris', lat: 48.8584, lng: 2.2945, country: 'France', type: 'Neo-Gothic Steel Spires' },
+  { name: 'Mont Saint-Michel Abbey, Normandy', lat: 48.6360, lng: -1.5114, country: 'France', type: 'Tidal Island Citadel' },
+  { name: 'Black Forest, Baden-Württemberg', lat: 48.0667, lng: 8.2167, country: 'Germany', type: 'Grimm Dark Witchwood' },
+  { name: 'Colosseum Ruins, Rome', lat: 41.8902, lng: 12.4922, country: 'Italy', type: 'Imperial Gladiatorial Ring' },
+  { name: 'Parthenon Temple, Athens', lat: 37.9715, lng: 23.7266, country: 'Greece', type: 'Pantheon of Gods' },
+
+  // North America (北美外来地脉)
+  { name: 'Grand Canyon, Arizona', lat: 36.0544, lng: -112.1401, country: 'United States', type: 'Crimson Earth Canyons' },
+  { name: 'Yellowstone Caldera, Wyoming', lat: 44.4280, lng: -110.5885, country: 'United States', type: 'Mystical Geyser Well' },
+  { name: 'Times Square Crossroads, New York', lat: 40.7580, lng: -73.9855, country: 'United States', type: 'Techno-Magic Crossroads' },
+  { name: 'Salem Woods, Massachusetts', lat: 42.5195, lng: -70.8967, country: 'United States', type: 'Witchcraft Assembly Woods' }
 ];
 
 export default function MapView({ onSave, lang }: MapViewProps) {
@@ -36,19 +58,34 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
 
+  // View state & tab settings (Map Pinning vs Narrative Description Resonance)
+  const [activeTab, setActiveTab] = useState<'map' | 'desc'>('map');
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [generatedName, setGeneratedName] = useState<NameEntry | null>(null);
   const [placeInfo, setPlaceInfo] = useState<{ name: string, country: string, type: string } | null>(null);
 
-  const [geoRange, setGeoRange] = useState<'national' | 'kanto' | 'custom'>('national');
-  const [characterStyle, setCharacterStyle] = useState<'academic' | 'noble' | 'modern' | 'historical'>('modern');
+  // Fated Backtrack logs (session history for undo/redo clicks)
+  const [generationHistory, setGenerationHistory] = useState<NameEntry[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
 
-  // Initialize MapLibre
+  // Custom filters
+  const [geoRange, setGeoRange] = useState<'national' | 'kanto' | 'china' | 'europe' | 'america' | 'custom'>('national');
+  const [characterStyle, setCharacterStyle] = useState<'modern' | 'academic' | 'noble' | 'historical' | 'yokai' | 'shrine' | 'ghost' | 'celestial'>('shrine');
+  
+  // Custom description inputs for new features
+  const [description, setDescription] = useState('');
+
+  // Map geocoding search states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchingMap, setSearchingMap] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+
+  // Initialize MapLibre Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Use lightweight aesthetic map tiles to prevent CSP violations or offline bugs
+    // Quiet minimalist light-golden-parchment raster style to stay beautifully in Eastern Touhou theme
     const mapStyle: maplibregl.StyleSpecification = {
       version: 8,
       sources: {
@@ -75,21 +112,19 @@ export default function MapView({ onSave, lang }: MapViewProps) {
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: mapStyle,
-      center: [139.6917, 35.6895], // Tokyo center
-      zoom: 6
+      center: [139.6917, 35.6895], // Start central Japan
+      zoom: 5
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-left');
-    
     mapRef.current = map;
 
-    // Click handler for custom spot selection
+    // Handle clicks
     map.on('click', (e) => {
       const { lng, lat } = e.lngLat;
       triggerLookup(lat, lng);
     });
 
-    // Handle layout container resizing
     const resizeObserver = new ResizeObserver(() => {
       map.resize();
     });
@@ -101,101 +136,297 @@ export default function MapView({ onSave, lang }: MapViewProps) {
     };
   }, []);
 
-  // Run generation for a given coordinate
+  // Sync map view when the selected geo level switches
+  useEffect(() => {
+    if (!mapRef.current) return;
+    if (geoRange === 'national' || geoRange === 'kanto') {
+      mapRef.current.easeTo({ center: [139.6917, 35.6895], zoom: 5, duration: 1000 });
+    } else if (geoRange === 'china') {
+      mapRef.current.easeTo({ center: [116.4074, 39.9042], zoom: 4, duration: 1000 });
+    } else if (geoRange === 'europe') {
+      mapRef.current.easeTo({ center: [2.2945, 48.8584], zoom: 4, duration: 1000 });
+    } else if (geoRange === 'america') {
+      mapRef.current.easeTo({ center: [-95.7129, 37.0902], zoom: 4, duration: 1000 });
+    }
+  }, [geoRange]);
+
+  // Backtrack History Helpers
+  const addEntryToHistory = (newEntry: NameEntry) => {
+    setGenerationHistory(prev => {
+      const sliced = prev.slice(0, historyIndex + 1);
+      const updated = [...sliced, newEntry];
+      setHistoryIndex(updated.length - 1);
+      return updated;
+    });
+  };
+
+  const handleBacktrackPrev = () => {
+    if (historyIndex > 0) {
+      const prevIdx = historyIndex - 1;
+      setHistoryIndex(prevIdx);
+      const prevEntry = generationHistory[prevIdx];
+      setGeneratedName(prevEntry);
+      
+      if (prevEntry.lat !== undefined && prevEntry.lng !== undefined) {
+        setSelectedLocation({ lat: prevEntry.lat, lng: prevEntry.lng });
+        setPlaceInfo({
+          name: prevEntry.placeName,
+          country: prevEntry.country,
+          type: prevEntry.characterArchetype_zh || prevEntry.characterArchetype || 'Anchor'
+        });
+        
+        if (mapRef.current) {
+          if (markerRef.current) markerRef.current.remove();
+          
+          const markerEl = document.createElement('div');
+          markerEl.style.width = '28px';
+          markerEl.style.height = '28px';
+          markerEl.style.borderRadius = '50%';
+          markerEl.style.background = '#f43f5e';
+          markerEl.style.border = '4px solid #fffdfa';
+          markerEl.style.boxShadow = '0 0 16px rgba(244, 63, 94, 0.9)';
+          markerEl.style.animation = 'marker-pulse 1.4s infinite ease-in-out';
+          
+          markerRef.current = new maplibregl.Marker(markerEl)
+            .setLngLat([prevEntry.lng, prevEntry.lat])
+            .addTo(mapRef.current);
+
+          mapRef.current.easeTo({
+            center: [prevEntry.lng, prevEntry.lat],
+            zoom: Math.max(mapRef.current.getZoom(), 7),
+            duration: 800
+          });
+        }
+      }
+    }
+  };
+
+  const handleBacktrackNext = () => {
+    if (historyIndex < generationHistory.length - 1) {
+      const nextIdx = historyIndex + 1;
+      setHistoryIndex(nextIdx);
+      const nextEntry = generationHistory[nextIdx];
+      setGeneratedName(nextEntry);
+      
+      if (nextEntry.lat !== undefined && nextEntry.lng !== undefined) {
+        setSelectedLocation({ lat: nextEntry.lat, lng: nextEntry.lng });
+        setPlaceInfo({
+          name: nextEntry.placeName,
+          country: nextEntry.country,
+          type: nextEntry.characterArchetype_zh || nextEntry.characterArchetype || 'Anchor'
+        });
+        
+        if (mapRef.current) {
+          if (markerRef.current) markerRef.current.remove();
+          
+          const markerEl = document.createElement('div');
+          markerEl.style.width = '28px';
+          markerEl.style.height = '28px';
+          markerEl.style.borderRadius = '50%';
+          markerEl.style.background = '#f43f5e';
+          markerEl.style.border = '4px solid #fffdfa';
+          markerEl.style.boxShadow = '0 0 16px rgba(244, 63, 94, 0.9)';
+          markerEl.style.animation = 'marker-pulse 1.4s infinite ease-in-out';
+          
+          markerRef.current = new maplibregl.Marker(markerEl)
+            .setLngLat([nextEntry.lng, nextEntry.lat])
+            .addTo(mapRef.current);
+
+          mapRef.current.easeTo({
+            center: [nextEntry.lng, nextEntry.lat],
+            zoom: Math.max(mapRef.current.getZoom(), 7),
+            duration: 800
+          });
+        }
+      }
+    }
+  };
+
+  // Execute geographical coordinate lookup
   const triggerLookup = async (lat: number, lng: number, overridePlace?: { name: string, country: string, type: string }) => {
     setSelectedLocation({ lat, lng });
     setGeneratedName(null);
     setLoading(true);
 
-    // Place Marker dynamically
     if (mapRef.current) {
       if (markerRef.current) {
         markerRef.current.remove();
       }
-      
-      const el = document.createElement('div');
-      el.className = 'custom-pulse-marker';
-      el.style.width = '24px';
-      el.style.height = '24px';
-      el.style.borderRadius = '50%';
-      el.style.background = '#e11d48';
-      el.style.border = '3px solid #ffffff';
-      el.style.boxShadow = '0 0 15px rgba(225, 29, 72, 0.6)';
-      el.style.animation = 'pulse-ring 1.5s infinite';
 
-      const customStyle = document.createElement('style');
-      customStyle.innerHTML = `
-        @keyframes pulse-ring {
-          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7); }
-          70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(225, 29, 72, 0); }
-          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+      // Torii Red Talisman ripple effect marker
+      const markerEl = document.createElement('div');
+      markerEl.className = 'touhou-talisman-marker';
+      markerEl.style.width = '28px';
+      markerEl.style.height = '28px';
+      markerEl.style.borderRadius = '50%';
+      markerEl.style.background = '#f43f5e';
+      markerEl.style.border = '4px solid #fffdfa';
+      markerEl.style.boxShadow = '0 0 16px rgba(244, 63, 94, 0.9)';
+      markerEl.style.cursor = 'pointer';
+      markerEl.style.animation = 'marker-pulse 1.4s infinite ease-in-out';
+
+      const pulseStyle = document.createElement('style');
+      pulseStyle.innerHTML = `
+        @keyframes marker-pulse {
+          0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.8); }
+          70% { transform: scale(1.15); box-shadow: 0 0 0 12px rgba(244, 63, 94, 0); }
+          100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
         }
       `;
-      document.head.appendChild(customStyle);
+      document.head.appendChild(pulseStyle);
 
-      markerRef.current = new maplibregl.Marker(el)
+      markerRef.current = new maplibregl.Marker(markerEl)
         .setLngLat([lng, lat])
         .addTo(mapRef.current);
 
-      // Smoothly pan map to selected location
       mapRef.current.easeTo({
         center: [lng, lat],
-        zoom: Math.max(mapRef.current.getZoom(), 8),
-        duration: 1200
+        zoom: Math.max(mapRef.current.getZoom(), 7),
+        duration: 1100
       });
     }
 
     try {
-      let placeName = 'Custom Marker';
+      let placeName = 'Custom Boundary Node';
       let country = 'Japan';
-      let locationType = 'Location';
+      let locationType = 'Spiritual Nexus';
 
       if (overridePlace) {
         placeName = overridePlace.name;
         country = overridePlace.country;
         locationType = overridePlace.type;
       } else {
-        // Fetch real Reverse Geocoding details from OpenStreetMap Nominatim
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=zh,ja,en`);
         if (response.ok) {
           const data = await response.json();
           if (data) {
-            placeName = data.display_name || 'Scenic Point';
+            placeName = data.display_name?.split(',')[0] || 'Aether Intersection';
             const address = data.address || {};
             country = address.country || 'Japan';
-
-            // Deduce a clean location label
-            locationType = address.suburb || address.city_district || address.town || address.county || address.state || 'Area Resonance';
+            locationType = address.suburb || address.city_district || address.town || address.state || 'Leyline node';
           }
         }
       }
 
       setPlaceInfo({ name: placeName, country, type: locationType });
 
-      // Call Gemini model back-end to generate styled character description/name
       const apiRes = await fetch('/api/generate-name', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           placeName,
           country,
-          locationType: `${locationType} (${characterStyle} style)`
+          locationType: `${locationType} (${characterStyle} vibe)`
         })
       });
 
-      if (!apiRes.ok) throw new Error("Generation error");
-
+      if (!apiRes.ok) throw new Error("Gensokyo API Error");
       const generatedData = await apiRes.json();
 
-      setGeneratedName({
+      const finalEntry = {
         id: crypto.randomUUID(),
         placeName,
         country,
         createdAt: Date.now(),
+        lat,
+        lng,
         ...generatedData
+      };
+
+      setGeneratedName(finalEntry);
+      addEntryToHistory(finalEntry);
+    } catch (err) {
+      console.error(err);
+      alert(t.alertError);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Perform specific descriptive/narrative lookup
+  const triggerDescriptionResonance = async () => {
+    if (!description.trim()) {
+      alert(lang === 'zh' ? '请填写角色描述！' : lang === 'ja' ? 'キャラクターの説明を入力してください！' : 'Please provide character descriptions!');
+      return;
+    }
+
+    setGeneratedName(null);
+    setLoading(true);
+
+    // Pick a regional anchor from the selected geo pool to weave into geography
+    let pool = REGIONAL_DATABASE;
+    if (geoRange === 'kanto') {
+      pool = REGIONAL_DATABASE.filter(item => item.country === 'Japan' && (item.type.includes('Kanto') || item.name.includes('Tokyo')));
+    } else if (geoRange === 'national') {
+      pool = REGIONAL_DATABASE.filter(item => item.country === 'Japan');
+    } else if (geoRange === 'china') {
+      pool = REGIONAL_DATABASE.filter(item => item.country === 'China');
+    } else if (geoRange === 'europe') {
+      pool = REGIONAL_DATABASE.filter(item => item.country !== 'Japan' && item.country !== 'China' && item.country !== 'United States');
+    } else if (geoRange === 'america') {
+      pool = REGIONAL_DATABASE.filter(item => item.country === 'United States');
+    }
+
+    const randomAnchor = pool[Math.floor(Math.random() * pool.length)];
+    const filterPlaceName = placeInfo?.name || randomAnchor.name.split(',')[0];
+    const filterCountry = placeInfo?.country || randomAnchor.country;
+    const filterLocationType = placeInfo?.type || randomAnchor.type;
+
+    try {
+      const apiRes = await fetch('/api/generate-description-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description,
+          characterStyle,
+          placeName: filterPlaceName,
+          country: filterCountry,
+          locationType: filterLocationType
+        })
       });
+
+      if (!apiRes.ok) throw new Error("Gensokyo Description API Error");
+      const generatedData = await apiRes.json();
+
+      // Pan to the selected background node if using coordinates
+      if (!placeInfo && mapRef.current) {
+        mapRef.current.easeTo({
+          center: [randomAnchor.lng, randomAnchor.lat],
+          zoom: 7,
+          duration: 900
+        });
+
+        // Add a glowing talisman marker at that anchor
+        if (markerRef.current) markerRef.current.remove();
+        const markerEl = document.createElement('div');
+        markerEl.style.width = '32px';
+        markerEl.style.height = '32px';
+        markerEl.style.borderRadius = '50%';
+        markerEl.style.background = '#d97706';
+        markerEl.style.border = '4px solid #fffdfa';
+        markerEl.style.boxShadow = '0 0 18px rgba(217, 119, 6, 0.9)';
+        markerEl.style.animation = 'marker-pulse 1.4s infinite ease-in-out';
+        
+        markerRef.current = new maplibregl.Marker(markerEl)
+          .setLngLat([randomAnchor.lng, randomAnchor.lat])
+          .addTo(mapRef.current);
+      }
+
+      const targetLat = selectedLocation?.lat ?? randomAnchor.lat;
+      const targetLng = selectedLocation?.lng ?? randomAnchor.lng;
+
+      const finalEntry = {
+        id: crypto.randomUUID(),
+        placeName: filterPlaceName,
+        country: filterCountry,
+        createdAt: Date.now(),
+        lat: targetLat,
+        lng: targetLng,
+        ...generatedData
+      };
+
+      setGeneratedName(finalEntry);
+      addEntryToHistory(finalEntry);
 
     } catch (err) {
       console.error(err);
@@ -205,19 +436,26 @@ export default function MapView({ onSave, lang }: MapViewProps) {
     }
   };
 
+  // Peeking border gap (Random Map selection)
   const handleRandomGenerate = () => {
-    // Select based on active filter
     let pool = REGIONAL_DATABASE;
     if (geoRange === 'kanto') {
-      pool = REGIONAL_DATABASE.filter(item => item.type.includes('Kanto') || item.name.includes('Tokyo') || item.type.includes('Kamakura'));
+      pool = REGIONAL_DATABASE.filter(item => item.country === 'Japan' && (item.type.includes('Kanto') || item.name.includes('Tokyo') || item.type.includes('Kamakura')));
+    } else if (geoRange === 'national') {
+      pool = REGIONAL_DATABASE.filter(item => item.country === 'Japan');
+    } else if (geoRange === 'china') {
+      pool = REGIONAL_DATABASE.filter(item => item.country === 'China');
+    } else if (geoRange === 'europe') {
+      pool = REGIONAL_DATABASE.filter(item => item.country !== 'Japan' && item.country !== 'China' && item.country !== 'United States');
+    } else if (geoRange === 'america') {
+      pool = REGIONAL_DATABASE.filter(item => item.country === 'United States');
     }
 
     const index = Math.floor(Math.random() * pool.length);
     const place = pool[index];
 
-    // Give a minor random coordinate shake to represent real regional variation
-    const offsetLat = place.lat + (Math.random() - 0.5) * 0.05;
-    const offsetLng = place.lng + (Math.random() - 0.5) * 0.05;
+    const offsetLat = place.lat + (Math.random() - 0.5) * 0.04;
+    const offsetLng = place.lng + (Math.random() - 0.5) * 0.04;
 
     triggerLookup(offsetLat, offsetLng, {
       name: place.name.split(',')[0],
@@ -226,76 +464,261 @@ export default function MapView({ onSave, lang }: MapViewProps) {
     });
   };
 
+  // Search submit handler using OpenStreetMap Nominatim Free Search API
+  const handleSearchSubmit = async () => {
+    if (!searchQuery.trim()) return;
+    setSearchingMap(true);
+    setSearchResults([]);
+
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&accept-language=zh,ja,en`);
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data || []);
+        if (data && data.length === 0) {
+          alert(lang === 'zh' 
+            ? '大结界未探测到对应尘世灵脉，请试着换个地名吧' 
+            : lang === 'ja' 
+            ? '大結界が該当する現世の霊脈を検出できませんでした' 
+            : 'No spiritual coordinates detected for this location. Please try another placename.');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSearchingMap(false);
+    }
+  };
+
+  // When a search result option is clicked, teleport to coordinates and trigger generator
+  const handleSelectSearchResult = (result: any) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    
+    const displayName = result.display_name || '';
+    const parts = displayName.split(',');
+    const name = parts[0] || 'Tuned Node';
+    const country = parts[parts.length - 1]?.trim() || 'Japan';
+    const type = parts[1]?.trim() || 'Aether Intersection';
+
+    setSearchResults([]);
+    setSearchQuery(name);
+
+    triggerLookup(lat, lng, {
+      name,
+      country,
+      type
+    });
+  };
+
   return (
-    <div className="flex-1 flex overflow-hidden w-full h-full">
+    <div className="flex-1 flex overflow-hidden w-full h-full bg-[#fcfbf9] relative">
       
-      {/* Left Sidebar: Filter controls styled according to target theme */}
-      <aside className="w-80 bg-white border-r border-slate-200 hidden lg:flex flex-col shrink-0">
-        <div className="p-6 space-y-6 flex-1 overflow-y-auto">
-          
-          <section>
-            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">{t.geoRange}</h3>
-            <div className="space-y-2">
-              <label 
-                onClick={() => setGeoRange('national')}
-                className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${geoRange === 'national' ? 'border-rose-100 bg-rose-55/70 text-rose-900 font-medium' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
-              >
-                <div className={`w-4 h-4 rounded-full border mr-3 flex items-center justify-center ${geoRange === 'national' ? 'border-rose-600' : 'border-slate-300'}`}>
-                  {geoRange === 'national' && <div className="w-2 h-2 rounded-full bg-rose-600" />}
-                </div>
-                <span className="text-sm font-medium">{t.geoNational}</span>
-              </label>
+      {/* Decorative Traditional Border ornaments */}
+      <div className="absolute top-0 bottom-0 left-0 w-1 bg-red-800 z-30 opacity-70 hidden md:block" />
+      <div className="absolute top-0 bottom-0 right-0 w-1 bg-red-800 z-30 opacity-70 hidden md:block" />
 
-              <label 
-                onClick={() => setGeoRange('kanto')}
-                className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${geoRange === 'kanto' ? 'border-rose-100 bg-rose-55/70 text-rose-900 font-medium' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
-              >
-                <div className={`w-4 h-4 rounded-full border mr-3 flex items-center justify-center ${geoRange === 'kanto' ? 'border-rose-600' : 'border-slate-300'}`}>
-                  {geoRange === 'kanto' && <div className="w-2 h-2 rounded-full bg-rose-600" />}
-                </div>
-                <span className="text-sm font-medium">{t.geoKanto}</span>
-              </label>
+      {/* Eastern Talisman Inspired Sidebar */}
+      <aside className="w-96 bg-[#fdfcf7] border-r border-[#e9e4d9] hidden md:flex flex-col shrink-0 shadow-xl overflow-hidden relative z-20">
+        
+        {/* Subtle clouds background or floral stamp */}
+        <div className="absolute top-3 right-4 opacity-5 pointer-events-none select-none text-[84px]">
+          ☯
+        </div>
 
-              <label 
-                onClick={() => setGeoRange('custom')}
-                className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${geoRange === 'custom' ? 'border-rose-100 bg-rose-55/70 text-rose-900 font-medium' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
-              >
-                <div className={`w-4 h-4 rounded-full border mr-3 flex items-center justify-center ${geoRange === 'custom' ? 'border-rose-600' : 'border-slate-300'}`}>
-                  {geoRange === 'custom' && <div className="w-2 h-2 rounded-full bg-rose-600" />}
-                </div>
-                <span className="text-sm font-medium">{t.geoCustom}</span>
-              </label>
-            </div>
-          </section>
-
-          <section>
-            <h3 className="text.[11px] font-bold text-slate-400 tracking-widest mb-4 uppercase">{t.stylePreset}</h3>
-            <select 
-              value={characterStyle}
-              onChange={(e) => setCharacterStyle(e.target.value as any)}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-800 focus:outline-none focus:border-rose-400"
-            >
-              <option value="modern">{t.styleModern}</option>
-              <option value="academic">{t.styleAcademic}</option>
-              <option value="noble">{t.styleNoble}</option>
-              <option value="historical">{t.styleHistorical}</option>
-            </select>
-          </section>
-
-          <button 
-            onClick={handleRandomGenerate}
-            className="w-full py-4 bg-rose-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-rose-100 hover:bg-rose-700 transition-all flex items-center justify-center gap-2 tracking-wider select-none cursor-pointer"
+        {/* Tab switcher: Map Leylines vs Desc Narrative */}
+        <div className="flex border-b border-[#e9e4d9] bg-[#f7f5ed] shrink-0 p-1">
+          <button
+            onClick={() => setActiveTab('map')}
+            className={`flex-1 py-3 text-xs font-bold tracking-widest text-center transition-all rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${activeTab === 'map' ? 'bg-white text-rose-700 shadow-sm border border-[#e2dcce]' : 'text-slate-500 hover:text-slate-800'}`}
           >
-            <Compass className="w-4 h-4" />
-            <span>{t.btnRandom}</span>
+            <span>🏮</span> {lang === 'zh' ? '灵脉地图定位' : lang === 'ja' ? '霊脈地図' : 'Map Leylines'}
+          </button>
+          <button
+            onClick={() => setActiveTab('desc')}
+            className={`flex-1 py-3 text-xs font-bold tracking-widest text-center transition-all rounded-md flex items-center justify-center gap-1.5 cursor-pointer ${activeTab === 'desc' ? 'bg-white text-rose-700 shadow-sm border border-[#e2dcce]' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            <span>🔮</span> {lang === 'zh' ? '描述宿命之契' : lang === 'ja' ? 'キャラクター叙事' : 'Narrative Sync'}
           </button>
         </div>
 
+        <div className="p-5 space-y-5 flex-1 overflow-y-auto">
+          
+          {/* TAB 1: GEOGRAPHICAL BARRIER GENERATOR */}
+          {activeTab === 'map' ? (
+            <div className="space-y-5">
+              <section className="bg-white p-4 rounded-xl border border-[#ede9df] shadow-sm relative">
+                <div className="absolute top-2 right-2 text-rose-800/10 text-2xl select-none">⛩</div>
+                <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+                  <Globe className="w-3.5 h-3.5 text-rose-600" />
+                  {t.geoRange}
+                </h3>
+                
+                {/* Scrollable list of refined countries / presets */}
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  <button 
+                    onClick={() => setGeoRange('national')}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'national' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                  >
+                    <span className="mr-2">🇯🇵</span> {t.geoNational}
+                  </button>
+
+                  <button 
+                    onClick={() => setGeoRange('kanto')}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'kanto' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                  >
+                    <span className="mr-2">🍁</span> {t.geoKanto}
+                  </button>
+
+                  <button 
+                    onClick={() => setGeoRange('china')}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'china' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                  >
+                    <span className="mr-2">🇨🇳</span> {t.geoChina}
+                  </button>
+
+                  <button 
+                    onClick={() => setGeoRange('europe')}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'europe' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                  >
+                    <span className="mr-2">🏰</span> {t.geoEurope}
+                  </button>
+
+                  <button 
+                    onClick={() => setGeoRange('america')}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'america' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                  >
+                    <span className="mr-2">🦅</span> {t.geoAmerica}
+                  </button>
+
+                  <button 
+                    onClick={() => setGeoRange('custom')}
+                    className={`w-full text-left flex items-center p-2 rounded-lg border transition-all text-xs cursor-pointer ${geoRange === 'custom' ? 'border-rose-200 bg-rose-50/70 text-rose-900 font-bold' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-50'}`}
+                  >
+                    <span className="mr-2">☯</span> {t.geoCustom}
+                  </button>
+                </div>
+              </section>
+
+              <section className="bg-white p-4 rounded-xl border border-[#ede9df] shadow-sm">
+                <h3 className="text-[11px] font-bold text-slate-400 tracking-widest mb-2 uppercase flex items-center gap-1">
+                  <Flame className="w-3.5 h-3.5 text-rose-600 animate-pulse" />
+                  {t.stylePreset}
+                </h3>
+                <select 
+                  value={characterStyle}
+                  onChange={(e) => setCharacterStyle(e.target.value as any)}
+                  className="w-full p-2.5 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 focus:outline-none focus:border-rose-400 font-medium"
+                >
+                  <option value="shrine">{t.styleShrine}</option>
+                  <option value="academic">{t.styleAcademic}</option>
+                  <option value="noble">{t.styleNoble}</option>
+                  <option value="historical">{t.styleHistorical}</option>
+                  <option value="yokai">{t.styleYokai}</option>
+                  <option value="ghost">{t.styleGhost}</option>
+                  <option value="celestial">{t.styleCelestial}</option>
+                  <option value="modern">{t.styleModern}</option>
+                </select>
+              </section>
+
+              <button 
+                onClick={handleRandomGenerate}
+                className="w-full py-4 bg-rose-700 text-white rounded-xl font-bold text-xs shadow-lg shadow-rose-200/50 hover:bg-rose-800 transition-all flex items-center justify-center gap-2 tracking-widest select-none cursor-pointer border-t border-rose-500"
+              >
+                <Compass className="w-4 h-4" />
+                <span>{t.btnRandom}</span>
+              </button>
+            </div>
+          ) : (
+            
+            // TAB 2: NARRATIVE FATE RESONANCE GENERATOR (NEW FEATURE)
+            <div className="space-y-4">
+              <section className="bg-white p-4 rounded-xl border border-[#ede9df] shadow-sm relative">
+                <div className="absolute top-2 right-2 text-rose-800/15 text-xl">🔮</div>
+                <h3 className="text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-rose-600" />
+                  {t.descLabel}
+                </h3>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full h-24 p-3 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:border-rose-400 focus:outline-none font-sans leading-relaxed resize-none"
+                  placeholder={t.descPlaceholder}
+                />
+              </section>
+
+              <section className="bg-white p-4 rounded-xl border border-[#ede9df] shadow-sm">
+                <h3 className="text-[11px] font-bold text-slate-400 tracking-widest mb-2 uppercase flex items-center gap-1">
+                  <Flame className="w-3.5 h-3.5 text-rose-600 animate-pulse" />
+                  {t.stylePreset}
+                </h3>
+                <select 
+                  value={characterStyle}
+                  onChange={(e) => setCharacterStyle(e.target.value as any)}
+                  className="w-full p-2.5 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 focus:outline-none focus:border-rose-400 font-medium"
+                >
+                  <option value="shrine">{t.styleShrine}</option>
+                  <option value="academic">{t.styleAcademic}</option>
+                  <option value="noble">{t.styleNoble}</option>
+                  <option value="historical">{t.styleHistorical}</option>
+                  <option value="yokai">{t.styleYokai}</option>
+                  <option value="ghost">{t.styleGhost}</option>
+                  <option value="celestial">{t.styleCelestial}</option>
+                  <option value="modern">{t.styleModern}</option>
+                </select>
+              </section>
+
+              <section className="bg-white p-4 rounded-xl border border-[#ede9df] shadow-sm">
+                <h3 className="text-[11px] font-bold text-slate-400 tracking-widest mb-2 uppercase flex items-center gap-1">
+                  <Globe className="w-3.5 h-3.5 text-rose-600" />
+                  {lang === 'zh' ? '地理依附灵脉' : lang === 'ja' ? '地理的依託霊脈' : 'Geographical Anchor'}
+                </h3>
+                <div className="flex gap-2">
+                  <select 
+                    value={geoRange}
+                    onChange={(e) => setGeoRange(e.target.value as any)}
+                    className="flex-1 p-2 bg-[#faf9f5] border border-[#e3ded4] rounded-lg text-xs text-slate-800 focus:outline-none font-medium"
+                  >
+                    <option value="national">{t.geoNational}</option>
+                    <option value="kanto">{t.geoKanto}</option>
+                    <option value="china">{t.geoChina}</option>
+                    <option value="europe">{t.geoEurope}</option>
+                    <option value="america">{t.geoAmerica}</option>
+                  </select>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2 italic">
+                  {placeInfo 
+                    ? `已锚定当前地图：${placeInfo.name}`
+                    : '未点击地图时，博丽大结界将自动提供上述预置区域的自然灵威'}
+                </p>
+              </section>
+
+              <button 
+                onClick={triggerDescriptionResonance}
+                className="w-full py-4 bg-amber-700 hover:bg-amber-800 text-white rounded-xl font-bold text-xs shadow-lg shadow-amber-200/50 transition-all flex items-center justify-center gap-2 tracking-widest select-none cursor-pointer border-t border-amber-500"
+              >
+                <Send className="w-4 h-4" />
+                <span>{t.btnDescSync}</span>
+              </button>
+            </div>
+          )}
+
+        </div>
+
+        {/* Selected coordinates details */}
         {selectedLocation && (
-          <div className="p-4 border-t border-slate-100 shrink-0">
-            <div className="bg-slate-900 rounded-lg p-4 text-white">
-              <p className="text-[10px] opacity-70 mb-1 tracking-widest uppercase">{t.mapActive}</p>
-              <p className="text-xs font-mono tracking-tighter italic">LAT: {selectedLocation.lat.toFixed(4)} / LONG: {selectedLocation.lng.toFixed(4)}</p>
+          <div className="p-4 border-t border-[#e9e4d9] bg-[#f7f5ed] shrink-0">
+            <div className="bg-[#1e1c18] rounded-xl p-3.5 text-white/90 shadow-inner relative overflow-hidden">
+              <div className="absolute right-2 bottom-1 text-white/5 text-4xl font-serif">印</div>
+              <p className="text-[9px] text-[#cca56a] font-bold mb-1 tracking-widest uppercase">☯ {t.mapActive}</p>
+              <p className="text-[11px] font-mono tracking-tighter">
+                LAT: {selectedLocation.lat.toFixed(5)} / LON: {selectedLocation.lng.toFixed(5)}
+              </p>
+              {placeInfo && (
+                <p className="text-[10px] text-slate-400 mt-1 font-sans line-clamp-1">
+                  ⛩ {placeInfo.name} ({placeInfo.country})
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -303,73 +726,170 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
       {/* Main Interactive Map wrapper */}
       <section className="flex-1 flex flex-col relative h-full">
-        <div ref={mapContainerRef} className="flex-1 w-full h-full bg-[#EAE9E4]" />
+        
+        {/* The map canvas, customized soft parchment style */}
+        <div ref={mapContainerRef} className="flex-1 w-full h-full bg-[#eae5dc]" />
 
-        {/* Float guidance overlay */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur px-6 py-3 rounded-full shadow-lg border border-slate-200/50 flex items-center gap-3 pointer-events-none z-10">
-          <MapPin className="w-4 h-4 text-rose-500 animate-bounce" />
-          <span className="font-bold text-xs tracking-wider text-slate-700 uppercase">{t.tipClickMap}</span>
+        {/* Floating Leyline Search Bar */}
+        <div className="absolute top-5 right-5 z-20 w-80 max-w-[calc(100vw-40px)]">
+          <div className="bg-[#fdfcf9]/95 backdrop-blur-md rounded-xl p-2 shadow-xl border border-[#e3ded4] flex gap-1.5 items-center">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSearchSubmit();
+              }}
+              placeholder={t.searchPlaceholder}
+              className="flex-1 bg-transparent border-none text-xs text-slate-800 placeholder-slate-400 focus:outline-none px-2 py-1 font-sans"
+            />
+            <button
+              onClick={handleSearchSubmit}
+              disabled={searchingMap}
+              className="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-lg text-[10px] font-bold tracking-wider uppercase transition-all select-none cursor-pointer flex items-center gap-1.5 disabled:bg-slate-400 shrink-0"
+            >
+              {searchingMap ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" />
+              )}
+              <span>{t.btnSearch}</span>
+            </button>
+          </div>
+
+          {/* Suggestions Dropdown */}
+          {searchResults.length > 0 && (
+            <div className="mt-1.5 bg-[#fdfcf7] rounded-xl shadow-2xl border border-[#e6decf] divide-y divide-[#ede9df] overflow-hidden max-h-60 overflow-y-auto z-50">
+              {searchResults.map((result, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSelectSearchResult(result)}
+                  className="w-full text-left p-2.5 px-3.5 hover:bg-rose-50 transition-colors cursor-pointer text-xs flex flex-col gap-0.5"
+                >
+                  <span className="font-bold text-slate-800 truncate block">
+                    🏮 {result.display_name.split(',')[0]}
+                  </span>
+                  <span className="text-[10px] text-slate-400 truncate block font-sans">
+                    {result.display_name.split(',').slice(1).join(',')}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Generation Bottom Drawer Outcome */}
+        {/* Elegant Float guidance overlay for Touch */}
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 bg-[#fdfcf9]/95 backdrop-blur px-5 py-2.5 rounded-full shadow-lg border border-[#e3ded4] flex items-center gap-2 pointer-events-none z-10 select-none">
+          <div className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
+          <span className="font-bold text-[11px] tracking-widest text-[#5c4a37]">{t.tipClickMap}</span>
+        </div>
+
+        {/* BOTTOM ACTIVE RESULT PANEL */}
         {(selectedLocation || loading) && (
-          <div className="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur rounded-2xl p-6 shadow-2xl border border-rose-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 z-10 transition-all duration-300">
+          <div className="absolute bottom-6 left-6 right-6 md:left-8 md:right-8 bg-[#fdfcf7] hover:bg-[#fffffb] rounded-2xl p-6 shadow-2xl border-2 border-[#e6decf] flex flex-col xl:flex-row justify-between items-start xl:items-center gap-5 z-10 transition-all duration-300">
+            
+            {/* Sakura blossom corner decorations */}
+            <div className="absolute top-0 right-0 w-8 h-8 opacity-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-rose-400 to-transparent pointer-events-none" />
+            
             {loading ? (
-              <div className="flex items-center gap-3 text-rose-600 p-2">
-                <Loader2 className="w-6 h-6 animate-spin" />
-                <p className="text-sm font-bold tracking-wider animate-pulse">{t.loadingText}</p>
+              <div className="flex items-center gap-4 text-rose-800 p-2 py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-rose-700" />
+                <p className="text-sm font-bold tracking-widest animate-pulse font-serif italic">{activeTab === 'desc' ? t.descTuning : t.loadingText}</p>
               </div>
             ) : generatedName ? (
               <>
-                <div className="flex-1">
-                  <div className="flex items-baseline space-x-3">
-                    <h2 className="text-4xl font-serif font-black tracking-tighter text-slate-900">
+                <div className="flex-1 space-y-2">
+                  {/* Fated Backtrack Timeline */}
+                  {generationHistory.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-2 pb-2.5 mb-2 border-b border-[#e6decf]">
+                      <span className="text-[10px] text-[#7c2d12] font-black uppercase tracking-wider font-serif flex items-center gap-1">
+                        🔮 {t.backtrackLabel}:
+                      </span>
+                      <div className="flex items-center gap-1.5 ml-auto">
+                        <button
+                          disabled={historyIndex <= 0}
+                          onClick={handleBacktrackPrev}
+                          className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#eae5da] disabled:opacity-30 disabled:hover:bg-[#FAF8F5] rounded-lg text-[10px] font-bold text-[#5c4a37] border border-[#e3ded4] transition-colors cursor-pointer select-none flex items-center gap-1"
+                          title={t.backtrackPrev}
+                        >
+                          {t.backtrackPrev}
+                        </button>
+                        <span className="text-[10px] font-mono text-[#5c4a37] select-none font-bold px-1.5 bg-[#f5f2eb] rounded border border-[#e3ded4]">
+                          {historyIndex + 1} / {generationHistory.length}
+                        </span>
+                        <button
+                          disabled={historyIndex >= generationHistory.length - 1}
+                          onClick={handleBacktrackNext}
+                          className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#eae5da] disabled:opacity-30 disabled:hover:bg-[#FAF8F5] rounded-lg text-[10px] font-bold text-[#5c4a37] border border-[#e3ded4] transition-colors cursor-pointer select-none flex items-center gap-1"
+                          title={t.backtrackNext}
+                        >
+                          {t.backtrackNext}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-baseline flex-wrap gap-x-3 gap-y-1">
+                    
+                    {/* Native localized display */}
+                    <h2 className="text-3xl font-serif font-black tracking-tight text-slate-800">
                       {lang === 'zh' 
                         ? (generatedName.fullName_zh || generatedName.fullName) 
                         : lang === 'ja'
                         ? (generatedName.fullName_ja || generatedName.fullName)
-                        : (generatedName.fullName_en || generatedName.fullName)}
+                        : (generatedName.fullName_en ||  generatedName.fullName)}
                     </h2>
-                    <span className="text-sm font-light text-slate-400 font-sans font-medium">
-                      {lang === 'zh' 
-                        ? `${generatedName.lastName_zh || generatedName.lastName || ''}${generatedName.firstName_zh || generatedName.firstName || ''}`
-                        : lang === 'ja'
-                        ? `${generatedName.fullName_ja || ''}`
-                        : `${generatedName.firstName_en || generatedName.firstName || ''} ${generatedName.lastName_en || generatedName.lastName || ''}`}
+
+                    {/* Secondary localization helper */}
+                    <span className="text-xs font-semibold text-rose-700 tracking-wide bg-rose-50 px-2 py-0.5 rounded border border-rose-100/50">
+                      {lang === 'zh'
+                        ? (generatedName.fullName_ja || generatedName.fullName)
+                        : (generatedName.fullName_zh || `${generatedName.lastName_zh || ''}${generatedName.firstName_zh || ''}`)}
                     </span>
+
+                    {/* Romaji text rendering - ALWAYS ATTACHED to generated names */}
+                    {generatedName.fullName_romaji && (
+                      <span className="text-[11px] text-amber-800 font-mono tracking-widest bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                        romaji: {generatedName.fullName_romaji}
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center space-x-4 mt-3 flex-wrap gap-y-2">
-                    <span className="px-2 py-0.5 bg-rose-50 text-rose-700 text-[10px] font-bold rounded uppercase tracking-widest border border-rose-100">
-                      {t.originLabel}: {lang === 'zh' 
-                        ? (generatedName.placeName_zh || generatedName.placeName).split(',')[0]
+
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-2">
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded uppercase tracking-wider border border-slate-200">
+                      📍 {t.originLabel}: {lang === 'zh' 
+                        ? (generatedName.placeName_zh || generatedName.placeName)
                         : lang === 'ja'
-                        ? (generatedName.placeName_ja || generatedName.placeName).split(',')[0]
-                        : (generatedName.placeName_en || generatedName.placeName).split(',')[0]}
+                        ? (generatedName.placeName_ja || generatedName.placeName)
+                        : (generatedName.placeName_en || generatedName.placeName)}
+                      {` (${lang === 'zh' ? (generatedName.country_zh || generatedName.country) : lang === 'ja' ? (generatedName.country_ja || '海外') : (generatedName.country_en || 'Overseas')})`}
                     </span>
-                    <span className="px-2 py-0.5 bg-amber-50 text-amber-800 text-[10px] font-bold rounded uppercase tracking-widest border border-amber-100">
-                      {t.typeLabel}: {lang === 'zh' 
+                    <span className="px-2 py-0.5 bg-amber-50 text-amber-800 text-[10px] font-bold rounded uppercase tracking-wider border border-amber-100">
+                      🌟 {t.typeLabel}: {lang === 'zh' 
                         ? (generatedName.characterArchetype_zh || generatedName.characterArchetype)
                         : lang === 'ja'
                         ? (generatedName.characterArchetype_ja || generatedName.characterArchetype)
                         : (generatedName.characterArchetype_en || generatedName.characterArchetype)}
                     </span>
-                    <span className="text-xs text-slate-500 italic font-medium leading-relaxed">
-                      {t.inspirationLabel}: {lang === 'zh' 
-                        ? (generatedName.inspiration_zh || generatedName.inspiration)
-                        : lang === 'ja'
-                        ? (generatedName.inspiration_ja || generatedName.inspiration)
-                        : (generatedName.inspiration_en || generatedName.inspiration)}
-                    </span>
                   </div>
+
+                  {/* Poetic inspiration */}
+                  <p className="text-xs text-slate-600 italic bg-[#FAF8F5] p-3 rounded-xl border border-[#eae5da] leading-relaxed font-sans mt-2">
+                    ✍️ <strong className="font-serif not-italic text-[#7c2d12]">{t.inspirationLabel}:</strong> {lang === 'zh' 
+                      ? (generatedName.inspiration_zh || generatedName.inspiration)
+                      : lang === 'ja'
+                      ? (generatedName.inspiration_ja || generatedName.inspiration)
+                      : (generatedName.inspiration_en || generatedName.inspiration)}
+                  </p>
                 </div>
                 
-                <div className="flex space-x-2 shrink-0 self-stretch md:self-auto justify-end">
+                <div className="flex xl:flex-col gap-2 shrink-0 self-stretch xl:self-auto justify-end">
                    <button 
                      onClick={() => {
                        onSave(generatedName);
                        alert(t.alertSaved);
                      }}
-                     className="px-6 h-12 bg-rose-600 hover:bg-rose-700 text-white rounded-full font-bold text-xs tracking-wider uppercase transition-all shadow-md cursor-pointer select-none"
+                     className="px-6 py-3 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-bold text-xs tracking-widest uppercase transition-all shadow-md cursor-pointer select-none border-t border-rose-500 w-full text-center"
                    >
                      {t.btnAddCollection}
                    </button>
@@ -377,7 +897,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
               </>
             ) : (
               <div className="text-slate-400 text-sm italic">
-                {lang === 'zh' ? '点击地图或点击随机检索以查看地理共鸣机制...' : 'Tap on the map or trigger random search to inspect coordinate resonance...'}
+                {lang === 'zh' ? '博丽法阵运转就绪。请在大结界中点选灵脉以幻化神名...' : 'Great Barrier array is online. Pin spatial nodes or invoke narrative sync above...'}
               </div>
             )}
           </div>
