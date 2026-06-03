@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { Agent, fetch as undiciFetch } from "undici";
 
 export type AiProvider = "gemini" | "volcengine" | "openai-compatible";
 
@@ -16,8 +17,25 @@ interface ChatCompletionResponse {
   }>;
 }
 
+interface ChatCompletionPayload extends ChatCompletionResponse {
+  error?: {
+    message?: string;
+  };
+}
+
 const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash";
 const DEFAULT_VOLCENGINE_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3";
+const DEFAULT_AI_CONNECT_TIMEOUT_MS = 25_000;
+const DEFAULT_AI_HEADERS_TIMEOUT_MS = 90_000;
+const DEFAULT_AI_BODY_TIMEOUT_MS = 240_000;
+const DEFAULT_AI_REQUEST_RETRIES = 3;
+const DEFAULT_AI_RETRY_BASE_DELAY_MS = 900;
+
+const aiDispatcher = new Agent({
+  connectTimeout: numberEnv("AI_CONNECT_TIMEOUT_MS", DEFAULT_AI_CONNECT_TIMEOUT_MS),
+  headersTimeout: numberEnv("AI_HEADERS_TIMEOUT_MS", DEFAULT_AI_HEADERS_TIMEOUT_MS),
+  bodyTimeout: numberEnv("AI_BODY_TIMEOUT_MS", DEFAULT_AI_BODY_TIMEOUT_MS),
+});
 
 export function getConfiguredProvider(): AiProvider {
   const configured = firstEnv(["AI_PROVIDER", "GENSOGEO_AI_PROVIDER", "MIANLEME_AI_PROVIDER"]).toLowerCase().trim();
@@ -109,27 +127,10 @@ async function generateWithOpenAiCompatible(
     ? { ...body, response_format: { type: "json_object" } }
     : body;
 
-  let response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.apiKey}`,
-    },
-    body: JSON.stringify(requestBody),
-  });
-
-  let payload = await response.json().catch(() => ({}));
+  let { response, payload } = await postChatCompletion(endpoint, config.apiKey, requestBody);
 
   if (!response.ok && JSON.stringify(payload).toLowerCase().includes("response_format")) {
-    response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
-    payload = await response.json().catch(() => ({}));
+    ({ response, payload } = await postChatCompletion(endpoint, config.apiKey, body));
   }
 
   if (!response.ok) {
@@ -154,6 +155,68 @@ async function generateWithOpenAiCompatible(
   }
 
   throw new Error("Model returned an empty response.");
+}
+
+async function postChatCompletion(endpoint: string, apiKey: string, requestBody: Record<string, unknown>): Promise<{
+  response: Awaited<ReturnType<typeof undiciFetch>>;
+  payload: ChatCompletionPayload;
+}> {
+  const retries = numberEnv("AI_REQUEST_RETRIES", DEFAULT_AI_REQUEST_RETRIES, 1, 5);
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      const response = await undiciFetch(endpoint, {
+        method: "POST",
+        dispatcher: aiDispatcher,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
+      const payload = await response.json().catch(() => ({})) as ChatCompletionPayload;
+
+      if (attempt < retries && shouldRetryStatus(response.status)) {
+        await waitForRetry(attempt);
+        continue;
+      }
+
+      return { response, payload };
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < retries) {
+        console.warn(`AI upstream request attempt ${attempt} failed; retrying.`, describeFetchError(error));
+        await waitForRetry(attempt);
+        continue;
+      }
+    }
+  }
+
+  throw new Error(`AI upstream request failed after ${retries} attempts: ${describeFetchError(lastError)}`);
+}
+
+function shouldRetryStatus(status: number) {
+  return [408, 409, 425, 429, 500, 502, 503, 504].includes(status);
+}
+
+function waitForRetry(attempt: number) {
+  const baseDelay = numberEnv("AI_RETRY_BASE_DELAY_MS", DEFAULT_AI_RETRY_BASE_DELAY_MS, 100, 5_000);
+  const jitter = Math.floor(Math.random() * 250);
+  return new Promise((resolve) => setTimeout(resolve, baseDelay * attempt + jitter));
+}
+
+function describeFetchError(error: unknown) {
+  if (error instanceof Error) {
+    const cause = error.cause;
+    if (cause && typeof cause === "object" && "code" in cause && typeof cause.code === "string") {
+      return `${error.message} (${cause.code})`;
+    }
+    return error.message;
+  }
+
+  return String(error);
 }
 
 function parseJsonObject(rawText: string) {
@@ -191,6 +254,14 @@ function requireFirstEnv(names: string[], message: string) {
     throw new Error(message);
   }
   return value;
+}
+
+function numberEnv(name: string, fallback: number, min = 1, max = Number.MAX_SAFE_INTEGER) {
+  const raw = process.env[name]?.trim();
+  const value = raw ? Number(raw) : fallback;
+
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(Math.max(Math.floor(value), min), max);
 }
 
 function resolveModelName(provider: AiProvider) {

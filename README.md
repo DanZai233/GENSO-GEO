@@ -89,6 +89,11 @@ Optional generation controls:
 ```bash
 AI_TEMPERATURE=0.85
 AI_MAX_TOKENS=2000
+AI_REQUEST_RETRIES=3
+AI_CONNECT_TIMEOUT_MS=25000
+AI_HEADERS_TIMEOUT_MS=90000
+AI_BODY_TIMEOUT_MS=240000
+AI_RETRY_BASE_DELAY_MS=900
 ```
 
 ## Vercel Deployment
@@ -99,6 +104,7 @@ This repo is configured for Vercel:
 - Output directory: `dist`
 - API functions: `api/*.ts`
 - Function max duration: `300s`
+- Function region: `hkg1`, closer to 火山引擎方舟's Beijing endpoint than Vercel's default `iad1`
 
 Set the same environment variables in Vercel Project Settings before deploying. For 火山引擎, you will need:
 
