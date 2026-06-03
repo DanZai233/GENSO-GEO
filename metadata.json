@@ -1,0 +1,6 @@
+{
+  "name": "GENSO-GEO",
+  "description": "Touhou Project themed Geographical Name Generator - weave mystic spellcards from map coordinate nodes with English, Chinese, and Japanese support",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
