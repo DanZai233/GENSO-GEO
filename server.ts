@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { generateDescriptionName, generatePlaceName } from "./lib/nameGeneration.js";
+import emaNotesHandler from "./api/ema-notes.js";
 
 dotenv.config();
 
@@ -33,6 +34,14 @@ app.post("/api/generate-description-name", async (req, res) => {
       error: "Failed to generate custom name from description",
     });
   }
+});
+
+app.get("/api/ema-notes", (req, res) => {
+  void emaNotesHandler(req as any, res as any);
+});
+
+app.post("/api/ema-notes", (req, res) => {
+  void emaNotesHandler(req as any, res as any);
 });
 
 async function startServer() {

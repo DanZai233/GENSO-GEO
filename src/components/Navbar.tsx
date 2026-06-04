@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewMode, Language } from '../types';
-import { BookOpen, CircleHelp, ExternalLink, Github, Globe } from 'lucide-react';
+import { BookOpen, CircleHelp, ExternalLink, Github, Globe, ScrollText } from 'lucide-react';
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { translations } from '../utils/translations';
@@ -77,6 +77,16 @@ export default function Navbar({ viewMode, setViewMode, collectionCount, lang, s
               {collectionCount}
             </span>
           )}
+        </button>
+        <button
+          onClick={() => setViewMode('plaza')}
+          className={cn(
+            "h-full flex items-center transition-colors px-1 cursor-pointer whitespace-nowrap shrink-0 gap-1.5",
+            viewMode === 'plaza' ? "text-rose-600 border-b-2 border-rose-600" : "hover:text-slate-900 border-b-2 border-transparent"
+          )}
+        >
+          <ScrollText className="w-3.5 h-3.5" />
+          {t.navPlaza}
         </button>
       </nav>
       

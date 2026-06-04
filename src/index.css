@@ -19,3 +19,24 @@
 .animate-prayer-sweep {
   animation: prayer-sweep 1.6s ease-in-out infinite;
 }
+
+.genso-ema-marker {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 2px solid #fff7ed;
+  border-radius: 999px;
+  background: #fbbf24;
+  color: #7f1d1d;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 0 0 3px rgb(127 29 29 / 0.18), 0 8px 18px rgb(127 29 29 / 0.22);
+  cursor: pointer;
+}
+
+.genso-ema-marker:hover {
+  background: #fff7ed;
+  transform: translateY(-1px) scale(1.05);
+}

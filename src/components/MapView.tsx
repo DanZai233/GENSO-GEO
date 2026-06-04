@@ -4,6 +4,10 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { NameEntry, Language } from '../types';
 import { Loader2, Sparkles, MapPin, Compass, Flame, BookOpen, Send, Globe } from 'lucide-react';
 import { translations } from '../utils/translations';
+import EmaNoteCard from './EmaNoteCard';
+import EmaPublishDialog from './EmaPublishDialog';
+import { EmaNote } from '../types';
+import { fetchNearbyEmaNotes } from '../utils/emaNotes';
 
 interface MapViewProps {
   onSave: (entry: NameEntry) => void;
@@ -89,6 +93,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
+  const emaMarkerRefs = useRef<maplibregl.Marker[]>([]);
   const generationInFlightRef = useRef(false);
   const searchInFlightRef = useRef(false);
   const triggerLookupRef = useRef<(lat: number, lng: number, overridePlace?: PlaceOverride) => void>(() => {});
@@ -99,6 +104,12 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   const [loading, setLoading] = useState(false);
   const [generatedName, setGeneratedName] = useState<NameEntry | null>(null);
   const [placeInfo, setPlaceInfo] = useState<{ name: string, country: string, type: string } | null>(null);
+  const [nearbyRadiusKm, setNearbyRadiusKm] = useState(100);
+  const [nearbyNotes, setNearbyNotes] = useState<EmaNote[]>([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [selectedEmaNote, setSelectedEmaNote] = useState<EmaNote | null>(null);
+  const [publishEntry, setPublishEntry] = useState<NameEntry | null>(null);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
   // Fated Backtrack logs (session history for undo/redo clicks)
   const [generationHistory, setGenerationHistory] = useState<NameEntry[]>([]);
@@ -115,6 +126,19 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchingMap, setSearchingMap] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
+
+  const loadNearbyNotes = async (lat: number, lng: number, radiusKm = nearbyRadiusKm) => {
+    setNearbyLoading(true);
+    try {
+      const notes = await fetchNearbyEmaNotes(lat, lng, radiusKm);
+      setNearbyNotes(notes);
+    } catch (error) {
+      console.error("Failed to load nearby ema notes", error);
+      setNearbyNotes([]);
+    } finally {
+      setNearbyLoading(false);
+    }
+  };
 
   const beginGeneration = () => {
     if (generationInFlightRef.current) return false;
@@ -198,6 +222,38 @@ export default function MapView({ onSave, lang }: MapViewProps) {
     }
   }, [geoRange]);
 
+  useEffect(() => {
+    emaMarkerRefs.current.forEach((marker) => marker.remove());
+    emaMarkerRefs.current = [];
+
+    if (!mapRef.current) return;
+
+    nearbyNotes.forEach((note) => {
+      if (typeof note.lat !== "number" || typeof note.lng !== "number") return;
+
+      const markerEl = document.createElement("button");
+      markerEl.type = "button";
+      markerEl.className = "genso-ema-marker";
+      markerEl.textContent = "絵";
+      markerEl.title = note.message;
+      markerEl.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setSelectedEmaNote(note);
+      });
+
+      const marker = new maplibregl.Marker(markerEl)
+        .setLngLat([note.lng, note.lat])
+        .addTo(mapRef.current!);
+
+      emaMarkerRefs.current.push(marker);
+    });
+
+    return () => {
+      emaMarkerRefs.current.forEach((marker) => marker.remove());
+      emaMarkerRefs.current = [];
+    };
+  }, [nearbyNotes]);
+
   // Backtrack History Helpers
   const addEntryToHistory = (newEntry: NameEntry) => {
     setGenerationHistory(prev => {
@@ -207,6 +263,19 @@ export default function MapView({ onSave, lang }: MapViewProps) {
       return updated;
     });
   };
+
+  useEffect(() => {
+    if (!selectedLocation) {
+      setNearbyNotes([]);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void loadNearbyNotes(selectedLocation.lat, selectedLocation.lng, nearbyRadiusKm);
+    }, 350);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [selectedLocation?.lat, selectedLocation?.lng, nearbyRadiusKm]);
 
   const handleBacktrackPrev = () => {
     if (historyIndex > 0) {
@@ -357,6 +426,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
       }
 
       setPlaceInfo({ name: placeName, country, type: locationType });
+      setSelectedEmaNote(null);
 
       const apiRes = await fetch('/api/generate-name', {
         method: 'POST',
@@ -383,6 +453,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
       setGeneratedName(finalEntry);
       addEntryToHistory(finalEntry);
+      void loadNearbyNotes(lat, lng);
     } catch (err) {
       console.error(err);
       alert(t.alertError);
@@ -478,6 +549,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
       setGeneratedName(finalEntry);
       addEntryToHistory(finalEntry);
+      void loadNearbyNotes(targetLat, targetLng);
 
     } catch (err) {
       console.error(err);
@@ -775,6 +847,54 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
         </div>
 
+        {/* Nearby public ema notes */}
+        <section className="border-t border-[#e9e4d9] bg-[#fbf8f0] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                <BookOpen className="h-4 w-4 text-rose-700" />
+                {t.emaNearbyTitle}
+              </h3>
+              <p className="mt-1 text-[10px] leading-5 text-slate-500">{t.emaNearbyDesc}</p>
+            </div>
+            <span className="rounded-full border border-rose-100 bg-white px-2 py-1 text-[10px] font-black text-rose-700">
+              {nearbyNotes.length}
+            </span>
+          </div>
+
+          <label className="mt-3 block">
+            <span className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-[#7c2d12]">
+              {t.emaRadiusLabel}
+              <strong>{nearbyRadiusKm}km</strong>
+            </span>
+            <input
+              type="range"
+              min={10}
+              max={300}
+              step={10}
+              value={nearbyRadiusKm}
+              onChange={(event) => setNearbyRadiusKm(Number(event.target.value))}
+              className="mt-2 w-full accent-rose-700"
+            />
+          </label>
+
+          <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
+            {nearbyLoading ? (
+              <div className="rounded-xl border border-dashed border-[#eadfca] bg-white/60 p-3 text-xs font-bold text-slate-500">
+                {t.emaNearbyLoading}
+              </div>
+            ) : nearbyNotes.length > 0 ? (
+              nearbyNotes.map((note) => (
+                <EmaNoteCard key={note.id} note={note} lang={lang} compact onSelect={setSelectedEmaNote} />
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed border-[#eadfca] bg-white/60 p-3 text-xs leading-6 text-slate-500">
+                {t.emaNearbyEmpty}
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Selected coordinates details */}
         {selectedLocation && (
           <div className="p-4 border-t border-[#e9e4d9] bg-[#f7f5ed] shrink-0">
@@ -963,7 +1083,12 @@ export default function MapView({ onSave, lang }: MapViewProps) {
                    <button 
                      onClick={() => {
                        onSave(generatedName);
-                       alert(t.alertSaved);
+                       if (generatedName.lat === undefined || generatedName.lng === undefined) {
+                         alert(`${t.alertSaved}\n${t.emaNoLocation}`);
+                         return;
+                       }
+                       setPublishEntry(generatedName);
+                       setPublishDialogOpen(true);
                      }}
                      className="px-6 py-3 bg-rose-700 hover:bg-rose-800 text-white rounded-xl font-bold text-xs tracking-widest uppercase transition-all shadow-md cursor-pointer select-none border-t border-rose-500 w-full text-center"
                    >
@@ -979,6 +1104,34 @@ export default function MapView({ onSave, lang }: MapViewProps) {
           </div>
         )}
       </section>
+
+      {selectedEmaNote && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#241711]/50 p-3 backdrop-blur-sm md:items-center md:p-6">
+          <div className="my-6 w-full max-w-2xl">
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedEmaNote(null)}
+                className="rounded-full border border-rose-100 bg-white px-4 py-2 text-xs font-black text-rose-700 shadow-sm cursor-pointer"
+              >
+                {t.emaCloseNote}
+              </button>
+            </div>
+            <EmaNoteCard note={selectedEmaNote} lang={lang} />
+          </div>
+        </div>
+      )}
+
+      <EmaPublishDialog
+        open={publishDialogOpen}
+        entry={publishEntry}
+        lang={lang}
+        radiusKm={nearbyRadiusKm}
+        onClose={() => setPublishDialogOpen(false)}
+        onPublished={(note) => {
+          setNearbyNotes((prev) => [note, ...prev.filter((item) => item.id !== note.id)]);
+        }}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import MapView from './components/MapView';
 import CollectionView from './components/CollectionView';
 import Navbar from './components/Navbar';
 import OnboardingGuide from './components/OnboardingGuide';
+import EmaPlazaView from './components/EmaPlazaView';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('map');
@@ -62,8 +63,10 @@ export default function App() {
       <main className="flex-1 relative overflow-visible md:overflow-hidden flex flex-col md:min-h-0">
         {viewMode === 'map' ? (
           <MapView lang={lang} onSave={saveToCollection} />
-        ) : (
+        ) : viewMode === 'collection' ? (
           <CollectionView lang={lang} collection={collection} onRemove={removeFromCollection} />
+        ) : (
+          <EmaPlazaView lang={lang} goToMap={() => setViewMode('map')} />
         )}
       </main>
 

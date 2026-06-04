@@ -47,5 +47,19 @@ export interface NameEntry {
 
 }
 
-export type ViewMode = 'map' | 'collection';
+export interface EmaNote {
+  id: string;
+  message: string;
+  email?: string;
+  entry: NameEntry;
+  lat: number;
+  lng: number;
+  radiusKm: number;
+  visitorCountry: string;
+  visitorRegion?: string;
+  visitorCity?: string;
+  createdAt: number;
+}
+
+export type ViewMode = 'map' | 'collection' | 'plaza';
 export type Language = 'zh' | 'en' | 'ja';
