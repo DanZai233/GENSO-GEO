@@ -17,7 +17,6 @@
     "@vis.gl/react-google-maps": "^1.8.3",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
-    "html2canvas": "^1.4.1",
     "lucide-react": "^0.546.0",
     "mapbox-gl": "^3.24.0",
     "maplibre-gl": "^5.24.0",

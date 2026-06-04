@@ -4,23 +4,25 @@ import { EmaNote, Language } from "../types";
 import { translations } from "../utils/translations";
 import { fetchEmaNotes } from "../utils/emaNotes";
 import EmaNoteCard from "./EmaNoteCard";
+import BunkaNoteDetailDialog from "./BunkaNoteDetailDialog";
 
 interface EmaPlazaViewProps {
   lang: Language;
-  goToMap: () => void;
+  goToMap: (note?: EmaNote) => void;
 }
 
 export default function EmaPlazaView({ lang, goToMap }: EmaPlazaViewProps) {
   const t = translations[lang];
   const [notes, setNotes] = useState<EmaNote[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<EmaNote | null>(null);
 
   const loadNotes = async () => {
     setLoading(true);
     try {
       setNotes(await fetchEmaNotes(80));
     } catch (error) {
-      console.error("Failed to load ema plaza", error);
+      console.warn("Failed to load Bunka board", error);
       setNotes([]);
     } finally {
       setLoading(false);
@@ -39,7 +41,7 @@ export default function EmaPlazaView({ lang, goToMap }: EmaPlazaViewProps) {
         <div className="relative mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-10">
           <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">
             <ScrollText className="h-4 w-4" />
-            Bunka Ema Dispatch
+            Bunbunmaru Leyline Dispatch
           </p>
           <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -67,7 +69,7 @@ export default function EmaPlazaView({ lang, goToMap }: EmaPlazaViewProps) {
         ) : notes.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {notes.map((note) => (
-              <EmaNoteCard key={note.id} note={note} lang={lang} />
+              <EmaNoteCard key={note.id} note={note} lang={lang} onSelect={setSelectedNote} />
             ))}
           </div>
         ) : (
@@ -78,7 +80,7 @@ export default function EmaPlazaView({ lang, goToMap }: EmaPlazaViewProps) {
             <p className="mt-4 text-sm leading-7 text-slate-600">{t.plazaEmpty}</p>
             <button
               type="button"
-              onClick={goToMap}
+              onClick={() => goToMap()}
               className="mt-5 rounded-xl bg-rose-700 px-5 py-3 text-xs font-black text-white shadow-lg shadow-rose-200/60 transition hover:bg-rose-800 cursor-pointer"
             >
               {t.plazaVisitMap}
@@ -86,6 +88,16 @@ export default function EmaPlazaView({ lang, goToMap }: EmaPlazaViewProps) {
           </div>
         )}
       </div>
+
+      <BunkaNoteDetailDialog
+        note={selectedNote}
+        lang={lang}
+        onClose={() => setSelectedNote(null)}
+        onLocate={(note) => {
+          setSelectedNote(null);
+          goToMap(note);
+        }}
+      />
     </div>
   );
 }

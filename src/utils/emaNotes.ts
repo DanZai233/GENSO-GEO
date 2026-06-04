@@ -63,6 +63,7 @@ export async function fetchNearbyEmaNotes(lat: number, lng: number, radiusKm: nu
 export async function publishEmaNote(payload: {
   entry: NameEntry;
   message: string;
+  authorName: string;
   email: string;
   radiusKm: number;
 }) {

@@ -16,6 +16,7 @@ interface EmaPublishDialogProps {
 export default function EmaPublishDialog({ open, entry, lang, radiusKm, onClose, onPublished }: EmaPublishDialogProps) {
   const t = translations[lang];
   const [message, setMessage] = useState("");
+  const [authorName, setAuthorName] = useState("");
   const [email, setEmail] = useState("");
   const [publishing, setPublishing] = useState(false);
 
@@ -31,10 +32,12 @@ export default function EmaPublishDialog({ open, entry, lang, radiusKm, onClose,
       const note = await publishEmaNote({
         entry,
         message,
+        authorName,
         email,
         radiusKm,
       });
       setMessage("");
+      setAuthorName("");
       setEmail("");
       onPublished(note);
       onClose();
@@ -57,13 +60,13 @@ export default function EmaPublishDialog({ open, entry, lang, radiusKm, onClose,
           type="button"
           onClick={onClose}
           className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-rose-100 bg-white/80 text-slate-500 shadow-sm transition hover:text-rose-700 cursor-pointer"
-          aria-label="Close ema dialog"
+          aria-label={t.emaCloseNote}
         >
           <X className="h-4 w-4" />
         </button>
 
         <div className="relative p-5 md:p-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-700">Hakurei Shrine Ema</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-700">Bunbunmaru Leyline Note</p>
           <h2 className="mt-2 text-2xl font-serif font-black text-slate-950">{t.emaPublishTitle}</h2>
           <p className="mt-2 text-sm leading-7 text-slate-600">{t.emaPublishIntro}</p>
           <p className="mt-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold leading-6 text-amber-900">
@@ -84,6 +87,18 @@ export default function EmaPublishDialog({ open, entry, lang, radiusKm, onClose,
               maxLength={800}
               placeholder={t.emaMessagePlaceholder}
               className="mt-2 min-h-32 w-full resize-y rounded-xl border border-[#eadfca] bg-white p-3 text-sm leading-7 text-slate-800 placeholder:text-slate-400 focus:border-rose-300 focus:outline-none"
+            />
+          </label>
+
+          <label className="mt-4 block">
+            <span className="text-xs font-black text-slate-700">{t.bunkaAuthorLabel}</span>
+            <input
+              type="text"
+              value={authorName}
+              onChange={(event) => setAuthorName(event.target.value)}
+              maxLength={80}
+              placeholder={t.bunkaAuthorPlaceholder}
+              className="mt-2 w-full rounded-xl border border-[#eadfca] bg-white px-3 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-rose-300 focus:outline-none"
             />
           </label>
 

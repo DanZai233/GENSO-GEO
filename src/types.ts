@@ -50,6 +50,7 @@ export interface NameEntry {
 export interface EmaNote {
   id: string;
   message: string;
+  authorName?: string;
   email?: string;
   entry: NameEntry;
   lat: number;

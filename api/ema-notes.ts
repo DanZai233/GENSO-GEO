@@ -3,6 +3,7 @@ import { getEmaNotesCollectionName, getEmaNotesDb } from "../lib/emaNotesDb.js";
 
 type EmaNoteDocument = {
   message: string;
+  authorName: string;
   email: string;
   entry: Record<string, unknown>;
   location: {
@@ -93,9 +94,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const email = sanitizeEmail(body.email);
+      const authorName = clampText(body.authorName, 80);
       const radiusKm = clampNumber(body.radiusKm, MIN_RADIUS_KM, MAX_RADIUS_KM, DEFAULT_RADIUS_KM);
       const note: EmaNoteDocument = {
         message,
+        authorName,
         email,
         entry,
         location: {
@@ -142,6 +145,7 @@ function toPublicNote(note: any) {
   return {
     id: note._id?.toString?.() || note.id,
     message: note.message,
+    authorName: note.authorName || "",
     email: note.email || "",
     entry: note.entry,
     lat: note.lat,

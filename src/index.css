@@ -16,6 +16,23 @@
   }
 }
 
+@keyframes marker-pulse {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgb(244 63 94 / 0.8);
+  }
+
+  70% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 12px rgb(244 63 94 / 0);
+  }
+
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgb(244 63 94 / 0);
+  }
+}
+
 .animate-prayer-sweep {
   animation: prayer-sweep 1.6s ease-in-out infinite;
 }

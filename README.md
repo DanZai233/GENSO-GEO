@@ -23,8 +23,8 @@ Works: [works.danzaii.cn](https://works.danzaii.cn/)
 3. Use Map Leylines to click or search a real-world location.
 4. Pick a style preset, or switch to Narrative Sync and write a character description.
 5. Save good results to the local Chronicles collection.
-6. Optionally hang a public shrine ema note with the location, generated name, message, optional email, time, and visitor country.
-7. Explore nearby ema notes within a configurable 10-300km radius, or browse the public Ema Notice Plaza.
+6. Optionally post a public “文花札” with the location, generated name, message, optional display name, optional email, time, and visitor country.
+7. Explore nearby 文花札 records within a configurable 10-300km radius, or browse the public 灵脉文花帖.
 8. Export a spellcard-style PNG when you want a portable character card.
 
 ## Features
@@ -35,7 +35,7 @@ Works: [works.danzaii.cn](https://works.danzaii.cn/)
 - Narrative mode that combines character descriptions with regional geography.
 - Frontend request lock and “少女祈祷中～” loading transition to prevent repeat submissions.
 - Local browser collection with PNG card export.
-- Public Touhou-style Ema Plaza backed by MongoDB, with nearby geospatial note discovery.
+- Public Touhou-style 灵脉文花帖 backed by MongoDB, with clickable detail notes and nearby geospatial discovery.
 - Backend provider switcher for Gemini, Volcengine Ark, and other OpenAI-compatible providers.
 - Vercel-ready static frontend plus serverless `/api/*` functions.
 - User-facing UI does not reveal which model or provider generated the result.
@@ -116,13 +116,15 @@ Set the same environment variables in Vercel Project Settings before deploying. 
 - `VOLCENGINE_MODEL`
 - Optional: `VOLCENGINE_BASE_URL`
 
-For the public Ema Plaza, configure MongoDB:
+For the public 灵脉文花帖, configure MongoDB:
 
 - `MONGODB_URI` — compatible with the PixelBead MongoDB Atlas variable
 - Optional: `GENSOGEO_MONGODB_DB=pixelbead`
 - Optional: `GENSOGEO_EMA_COLLECTION=genso_ema_notes`
 
-The Ema Plaza stores public user-submitted messages, generated name metadata, coordinates, optional public email, submission time, and Vercel's visitor country header. It does not store the raw IP address.
+The environment variable keeps the original internal `EMA` name for backward compatibility with existing deployments and data. The public UI calls the feature “灵脉文花帖 / 文花札”.
+
+The 文花帖 stores public user-submitted messages, optional display names, generated name metadata, coordinates, optional public email, submission time, and Vercel's visitor country header. It does not store the raw IP address.
 
 Deploy:
 

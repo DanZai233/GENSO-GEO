@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ViewMode, NameEntry, Language } from './types';
+import { ViewMode, NameEntry, Language, EmaNote } from './types';
 import MapView from './components/MapView';
 import CollectionView from './components/CollectionView';
 import Navbar from './components/Navbar';
@@ -9,6 +9,7 @@ import EmaPlazaView from './components/EmaPlazaView';
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [collection, setCollection] = useState<NameEntry[]>([]);
+  const [focusNote, setFocusNote] = useState<EmaNote | null>(null);
   const [lang, setLangState] = useState<Language>(() => {
     return (localStorage.getItem('user-selected-language') as Language) || 'zh';
   });
@@ -49,11 +50,19 @@ export default function App() {
     localStorage.setItem('geo-names-collection', JSON.stringify(updated));
   };
 
+  const goToMap = (note?: EmaNote) => {
+    setFocusNote(note || null);
+    setViewMode('map');
+  };
+
   return (
     <div className="min-h-dvh md:h-dvh bg-[#F7F6F2] text-slate-800 flex flex-col font-sans overflow-y-auto md:overflow-hidden">
       <Navbar 
         viewMode={viewMode} 
-        setViewMode={setViewMode} 
+        setViewMode={(mode) => {
+          if (mode === 'map') setFocusNote(null);
+          setViewMode(mode);
+        }}
         collectionCount={collection.length} 
         lang={lang} 
         setLang={setLang} 
@@ -62,11 +71,11 @@ export default function App() {
       
       <main className="flex-1 relative overflow-visible md:overflow-hidden flex flex-col md:min-h-0">
         {viewMode === 'map' ? (
-          <MapView lang={lang} onSave={saveToCollection} />
+          <MapView lang={lang} onSave={saveToCollection} focusNote={focusNote} />
         ) : viewMode === 'collection' ? (
           <CollectionView lang={lang} collection={collection} onRemove={removeFromCollection} />
         ) : (
-          <EmaPlazaView lang={lang} goToMap={() => setViewMode('map')} />
+          <EmaPlazaView lang={lang} goToMap={goToMap} />
         )}
       </main>
 

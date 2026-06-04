@@ -6,12 +6,14 @@ import { Loader2, Sparkles, MapPin, Compass, Flame, BookOpen, Send, Globe } from
 import { translations } from '../utils/translations';
 import EmaNoteCard from './EmaNoteCard';
 import EmaPublishDialog from './EmaPublishDialog';
+import BunkaNoteDetailDialog from './BunkaNoteDetailDialog';
 import { EmaNote } from '../types';
-import { fetchNearbyEmaNotes } from '../utils/emaNotes';
+import { fetchNearbyEmaNotes, getEntryArchetype, getEntryCountry, getEntryPlace } from '../utils/emaNotes';
 
 interface MapViewProps {
   onSave: (entry: NameEntry) => void;
   lang: Language;
+  focusNote?: EmaNote | null;
 }
 
 type PlaceOverride = { name: string, country: string, type: string };
@@ -88,7 +90,7 @@ function PrayerLoading({ title, message, hint }: { title: string; message: strin
   );
 }
 
-export default function MapView({ onSave, lang }: MapViewProps) {
+export default function MapView({ onSave, lang, focusNote }: MapViewProps) {
   const t = translations[lang];
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -96,6 +98,8 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   const emaMarkerRefs = useRef<maplibregl.Marker[]>([]);
   const generationInFlightRef = useRef(false);
   const searchInFlightRef = useRef(false);
+  const focusedNoteIdRef = useRef<string | null>(null);
+  const suppressNextRangeSyncRef = useRef(false);
   const triggerLookupRef = useRef<(lat: number, lng: number, overridePlace?: PlaceOverride) => void>(() => {});
 
   // View state & tab settings (Map Pinning vs Narrative Description Resonance)
@@ -133,7 +137,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
       const notes = await fetchNearbyEmaNotes(lat, lng, radiusKm);
       setNearbyNotes(notes);
     } catch (error) {
-      console.error("Failed to load nearby ema notes", error);
+      console.warn("Failed to load nearby Bunka notes", error);
       setNearbyNotes([]);
     } finally {
       setNearbyLoading(false);
@@ -150,6 +154,57 @@ export default function MapView({ onSave, lang }: MapViewProps) {
   const endGeneration = () => {
     generationInFlightRef.current = false;
     setLoading(false);
+  };
+
+  const placePrimaryMarker = (lat: number, lng: number) => {
+    if (!mapRef.current) return;
+    if (markerRef.current) markerRef.current.remove();
+
+    const markerEl = document.createElement('div');
+    markerEl.className = 'touhou-talisman-marker';
+    markerEl.style.width = '28px';
+    markerEl.style.height = '28px';
+    markerEl.style.borderRadius = '50%';
+    markerEl.style.background = '#f43f5e';
+    markerEl.style.border = '4px solid #fffdfa';
+    markerEl.style.boxShadow = '0 0 16px rgba(244, 63, 94, 0.9)';
+    markerEl.style.cursor = 'pointer';
+    markerEl.style.animation = 'marker-pulse 1.4s infinite ease-in-out';
+
+    markerRef.current = new maplibregl.Marker(markerEl)
+      .setLngLat([lng, lat])
+      .addTo(mapRef.current);
+  };
+
+  const focusBunkaNoteOnMap = (note: EmaNote, openDetail = true) => {
+    suppressNextRangeSyncRef.current = true;
+    const focusedEntry = {
+      ...note.entry,
+      id: note.entry.id || note.id,
+      lat: note.lat,
+      lng: note.lng,
+      createdAt: note.entry.createdAt || note.createdAt,
+    };
+
+    setActiveTab('map');
+    setSelectedLocation({ lat: note.lat, lng: note.lng });
+    setGeneratedName(focusedEntry);
+    setPlaceInfo({
+      name: getEntryPlace(focusedEntry, lang),
+      country: getEntryCountry(focusedEntry, lang),
+      type: getEntryArchetype(focusedEntry, lang) || 'Leyline note',
+    });
+    if (openDetail) setSelectedEmaNote(note);
+
+    placePrimaryMarker(note.lat, note.lng);
+    if (mapRef.current) {
+      mapRef.current.easeTo({
+        center: [note.lng, note.lat],
+        zoom: Math.max(mapRef.current.getZoom(), 8),
+        duration: 900,
+      });
+    }
+    void loadNearbyNotes(note.lat, note.lng);
   };
 
   // Initialize MapLibre Map
@@ -208,9 +263,20 @@ export default function MapView({ onSave, lang }: MapViewProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!focusNote || !mapRef.current) return;
+    if (focusedNoteIdRef.current === focusNote.id) return;
+    focusedNoteIdRef.current = focusNote.id;
+    focusBunkaNoteOnMap(focusNote);
+  }, [focusNote?.id]);
+
   // Sync map view when the selected geo level switches
   useEffect(() => {
     if (!mapRef.current) return;
+    if (suppressNextRangeSyncRef.current) {
+      suppressNextRangeSyncRef.current = false;
+      return;
+    }
     if (geoRange === 'national' || geoRange === 'kanto') {
       mapRef.current.easeTo({ center: [139.6917, 35.6895], zoom: 5, duration: 1000 });
     } else if (geoRange === 'china') {
@@ -234,7 +300,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
       const markerEl = document.createElement("button");
       markerEl.type = "button";
       markerEl.className = "genso-ema-marker";
-      markerEl.textContent = "絵";
+      markerEl.textContent = "文";
       markerEl.title = note.message;
       markerEl.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -366,35 +432,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
     setGeneratedName(null);
 
     if (mapRef.current) {
-      if (markerRef.current) {
-        markerRef.current.remove();
-      }
-
-      // Torii Red Talisman ripple effect marker
-      const markerEl = document.createElement('div');
-      markerEl.className = 'touhou-talisman-marker';
-      markerEl.style.width = '28px';
-      markerEl.style.height = '28px';
-      markerEl.style.borderRadius = '50%';
-      markerEl.style.background = '#f43f5e';
-      markerEl.style.border = '4px solid #fffdfa';
-      markerEl.style.boxShadow = '0 0 16px rgba(244, 63, 94, 0.9)';
-      markerEl.style.cursor = 'pointer';
-      markerEl.style.animation = 'marker-pulse 1.4s infinite ease-in-out';
-
-      const pulseStyle = document.createElement('style');
-      pulseStyle.innerHTML = `
-        @keyframes marker-pulse {
-          0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.8); }
-          70% { transform: scale(1.15); box-shadow: 0 0 0 12px rgba(244, 63, 94, 0); }
-          100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
-        }
-      `;
-      document.head.appendChild(pulseStyle);
-
-      markerRef.current = new maplibregl.Marker(markerEl)
-        .setLngLat([lng, lat])
-        .addTo(mapRef.current);
+      placePrimaryMarker(lat, lng);
 
       mapRef.current.easeTo({
         center: [lng, lat],
@@ -847,7 +885,7 @@ export default function MapView({ onSave, lang }: MapViewProps) {
 
         </div>
 
-        {/* Nearby public ema notes */}
+        {/* Nearby public bunka notes */}
         <section className="border-t border-[#e9e4d9] bg-[#fbf8f0] p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -1105,22 +1143,12 @@ export default function MapView({ onSave, lang }: MapViewProps) {
         )}
       </section>
 
-      {selectedEmaNote && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#241711]/50 p-3 backdrop-blur-sm md:items-center md:p-6">
-          <div className="my-6 w-full max-w-2xl">
-            <div className="mb-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedEmaNote(null)}
-                className="rounded-full border border-rose-100 bg-white px-4 py-2 text-xs font-black text-rose-700 shadow-sm cursor-pointer"
-              >
-                {t.emaCloseNote}
-              </button>
-            </div>
-            <EmaNoteCard note={selectedEmaNote} lang={lang} />
-          </div>
-        </div>
-      )}
+      <BunkaNoteDetailDialog
+        note={selectedEmaNote}
+        lang={lang}
+        onClose={() => setSelectedEmaNote(null)}
+        onLocate={(note) => focusBunkaNoteOnMap(note)}
+      />
 
       <EmaPublishDialog
         open={publishDialogOpen}

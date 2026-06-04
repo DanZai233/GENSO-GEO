@@ -1,8 +1,8 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { NameEntry, Language } from '../types';
-import { Trash2, Download, ExternalLink, Image as ImageIcon } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { Trash2, Image as ImageIcon } from 'lucide-react';
 import { translations } from '../utils/translations';
+import { exportNameEntryCard } from '../utils/exportCardImage';
 
 interface CollectionViewProps {
   collection: NameEntry[];
@@ -43,23 +43,11 @@ export default function CollectionView({ collection, onRemove, lang }: Collectio
 }
 
 function CharacterCard({ entry, onRemove, lang }: { key?: string; entry: NameEntry, onRemove: (id: string) => void, lang: Language }) {
-  const cardRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
 
   const exportAsImage = async () => {
-    if (!cardRef.current) return;
     try {
-      const canvas = await html2canvas(cardRef.current, { backgroundColor: '#ffffff', scale: 2 });
-      const image = canvas.toDataURL("image/png", 1.0);
-      const link = document.createElement('a');
-      const filename = lang === 'ja'
-        ? `${(entry.fullName_ja || entry.fullName || "GensouCard")}_GeoCard.png`
-        : lang === 'zh' 
-        ? `${(entry.fullName_zh || entry.fullName || "Geocard")}_GeoCard.png`
-        : `${(entry.fullName_en || entry.fullName || "Geocard").replace(/\s+/g, '_')}_GeoCard.png`;
-      link.download = filename;
-      link.href = image;
-      link.click();
+      await exportNameEntryCard(entry, lang);
     } catch (e) {
       console.error("Export failed", e);
       alert(t.exportFailed);
@@ -99,7 +87,7 @@ function CharacterCard({ entry, onRemove, lang }: { key?: string; entry: NameEnt
   return (
     <div className="group flex flex-col">
       {/* Printable Card Area */}
-      <div ref={cardRef} className="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col relative">
+      <div className="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-slate-200 flex-1 flex flex-col relative">
         <div className="flex justify-between items-start mb-3">
           <div className="w-10 h-10 bg-rose-50 border border-rose-150 rounded-full flex items-center justify-center text-rose-700 font-serif font-bold text-lg select-none">
             {lang === 'ja' ? '☯' : lang === 'zh' ? (entry.lastName_zh ? entry.lastName_zh.charAt(0) : '博') : (entry.firstName_en ? entry.firstName_en.charAt(0) : 'G')}
