@@ -5,6 +5,7 @@ import CollectionView from './components/CollectionView';
 import Navbar from './components/Navbar';
 import OnboardingGuide from './components/OnboardingGuide';
 import EmaPlazaView from './components/EmaPlazaView';
+import AboutView from './components/AboutView';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('map');
@@ -74,8 +75,10 @@ export default function App() {
           <MapView lang={lang} onSave={saveToCollection} focusNote={focusNote} />
         ) : viewMode === 'collection' ? (
           <CollectionView lang={lang} collection={collection} onRemove={removeFromCollection} />
-        ) : (
+        ) : viewMode === 'plaza' ? (
           <EmaPlazaView lang={lang} goToMap={goToMap} />
+        ) : (
+          <AboutView lang={lang} />
         )}
       </main>
 

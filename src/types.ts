@@ -62,5 +62,5 @@ export interface EmaNote {
   createdAt: number;
 }
 
-export type ViewMode = 'map' | 'collection' | 'plaza';
+export type ViewMode = 'map' | 'collection' | 'plaza' | 'about';
 export type Language = 'zh' | 'en' | 'ja';
