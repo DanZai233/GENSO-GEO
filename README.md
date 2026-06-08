@@ -12,6 +12,7 @@ Works: [works.danzaii.cn](https://works.danzaii.cn/)
 ## Design Intent
 
 - Give writers, TRPG players, fan creators, and naming enjoyers a playful first draft for place-bound characters.
+- Start from the light-novel observation that many memorable character names feel rooted in real places, then extend that idea into a Touhou-inspired geography, folklore, and spellcard mood.
 - Blend real geography with a shrine-boundary fantasy mood without exposing model/provider details to end users.
 - Keep the generated record useful across languages: Chinese, English, Japanese, and Romaji.
 - Make the app usable on desktop, tablet, and mobile, with a beginner guide on first visit.
