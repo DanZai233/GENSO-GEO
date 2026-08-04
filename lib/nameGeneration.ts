@@ -1,4 +1,5 @@
 import { generateJsonWithModel } from "./aiProvider.js";
+import type { ProviderConfig } from "unillm-sdk";
 import {
   buildDescriptionPrompt,
   buildPlacePrompt,
@@ -6,8 +7,8 @@ import {
   type PlaceGenerationInput,
 } from "./prompts.js";
 
-export async function generatePlaceName(input: PlaceGenerationInput) {
-  const result = await generateJsonWithModel(buildPlacePrompt(input));
+export async function generatePlaceName(input: PlaceGenerationInput, modelConfig?: ProviderConfig) {
+  const result = await generateJsonWithModel(buildPlacePrompt(input), modelConfig);
   return enrichGeneratedName(result.data, {
     placeName: input.placeName || "Kyoto",
     country: input.country || "Japan",
@@ -16,8 +17,8 @@ export async function generatePlaceName(input: PlaceGenerationInput) {
   });
 }
 
-export async function generateDescriptionName(input: DescriptionGenerationInput) {
-  const result = await generateJsonWithModel(buildDescriptionPrompt(input));
+export async function generateDescriptionName(input: DescriptionGenerationInput, modelConfig?: ProviderConfig) {
+  const result = await generateJsonWithModel(buildDescriptionPrompt(input), modelConfig);
   return enrichGeneratedName(result.data, {
     placeName: input.placeName || "Kyoto",
     country: input.country || "Japan",

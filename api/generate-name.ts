@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const data = await generatePlaceName(req.body || {});
+    const data = await generatePlaceName(req.body || {}, req.body?.modelConfig);
     return res.status(200).json(data);
   } catch (error) {
     console.error("Vercel name generation error:", error);

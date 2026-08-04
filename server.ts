@@ -2,8 +2,11 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
+import { UnifiedLLM } from "unillm-sdk";
 import { generateDescriptionName, generatePlaceName } from "./lib/nameGeneration.js";
 import emaNotesHandler from "./api/ema-notes.js";
+import providersHandler from "./api/providers.js";
+import modelsHandler from "./api/models.js";
 
 dotenv.config();
 
@@ -14,7 +17,7 @@ app.use(express.json());
 
 app.post("/api/generate-name", async (req, res) => {
   try {
-    const data = await generatePlaceName(req.body || {});
+    const data = await generatePlaceName(req.body || {}, req.body?.modelConfig);
     res.json(data);
   } catch (error) {
     console.error("Name generation error:", error);
@@ -26,7 +29,7 @@ app.post("/api/generate-name", async (req, res) => {
 
 app.post("/api/generate-description-name", async (req, res) => {
   try {
-    const data = await generateDescriptionName(req.body || {});
+    const data = await generateDescriptionName(req.body || {}, req.body?.modelConfig);
     res.json(data);
   } catch (error) {
     console.error("Description generation error:", error);
@@ -34,6 +37,15 @@ app.post("/api/generate-description-name", async (req, res) => {
       error: "Failed to generate custom name from description",
     });
   }
+});
+
+// 厂商注册表 + 模型列表(前端 AI 设置面板用)
+app.get("/api/providers", (req, res) => {
+  void providersHandler(req as any, res as any);
+});
+
+app.post("/api/models", (req, res) => {
+  void modelsHandler(req as any, res as any);
 });
 
 app.get("/api/ema-notes", (req, res) => {

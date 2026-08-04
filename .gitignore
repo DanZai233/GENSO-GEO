@@ -7,3 +7,6 @@ coverage/
 .env*
 !.env.example
 .vercel
+
+# vendored unillm-sdk 需要提交构建产物供 Vercel 使用
+!vendor/unillm-sdk/dist/

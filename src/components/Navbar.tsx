@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ViewMode, Language } from '../types';
-import { BookOpen, CircleHelp, ExternalLink, Github, Globe, Info, ScrollText } from 'lucide-react';
+import { BookOpen, CircleHelp, ExternalLink, Github, Globe, Info, ScrollText, Sparkles } from 'lucide-react';
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { translations } from '../utils/translations';
 import { externalLinks } from '../utils/links';
+import AiSettingsModal from './AiSettingsModal';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -21,6 +22,7 @@ interface NavbarProps {
 
 export default function Navbar({ viewMode, setViewMode, collectionCount, lang, setLang, openGuide }: NavbarProps) {
   const t = translations[lang];
+  const [aiSettingsOpen, setAiSettingsOpen] = useState(false);
 
   const cycleLanguage = () => {
     if (lang === 'zh') {
@@ -103,6 +105,15 @@ export default function Navbar({ viewMode, setViewMode, collectionCount, lang, s
       <div className="flex items-center gap-2 shrink-0">
         <button
           type="button"
+          onClick={() => setAiSettingsOpen(true)}
+          className="grid h-9 w-9 place-items-center rounded-full border border-violet-100 bg-violet-50 text-violet-600 hover:bg-violet-100 transition-all cursor-pointer shadow-sm"
+          title="AI 模型设置(厂商 / 模型列表)"
+          aria-label="AI 模型设置"
+        >
+          <Sparkles className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
           onClick={openGuide}
           className="grid h-9 w-9 place-items-center rounded-full border border-amber-100 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all cursor-pointer shadow-sm"
           title={t.guideReopen}
@@ -128,6 +139,7 @@ export default function Navbar({ viewMode, setViewMode, collectionCount, lang, s
           <span className="sm:hidden">{lang.toUpperCase()}</span>
         </button>
       </div>
+      <AiSettingsModal open={aiSettingsOpen} onClose={() => setAiSettingsOpen(false)} />
     </header>
   );
 }

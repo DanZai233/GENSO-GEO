@@ -38,6 +38,9 @@ Works: [works.danzaii.cn](https://works.danzaii.cn/)
 - Local browser collection with PNG card export.
 - Public Touhou-style 灵脉文花帖 backed by MongoDB, with clickable detail notes and nearby geospatial discovery.
 - Backend provider switcher for Gemini, Volcengine Ark, and other OpenAI-compatible providers.
+- AI 模型设置面板(导航栏 ✨ 按钮):前端选择厂商 → 实时拉取该厂商支持的模型列表 → 选模型,
+  配置存于浏览器 localStorage 并随生成请求下发(modelConfig),优先于服务器环境变量,留空则回退环境变量。
+- Backend AI 能力由 unillm-sdk 统一提供(14 家厂商开箱即用),新增厂商无需改本仓库代码。
 - Vercel-ready static frontend plus serverless `/api/*` functions.
 - User-facing UI does not reveal which model or provider generated the result.
 

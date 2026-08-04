@@ -9,6 +9,7 @@ import EmaPublishDialog from './EmaPublishDialog';
 import BunkaNoteDetailDialog from './BunkaNoteDetailDialog';
 import { EmaNote } from '../types';
 import { fetchNearbyEmaNotes, getEntryArchetype, getEntryCountry, getEntryPlace } from '../utils/emaNotes';
+import { loadAiConfig } from './AiSettingsModal';
 
 interface MapViewProps {
   onSave: (entry: NameEntry) => void;
@@ -472,7 +473,8 @@ export default function MapView({ onSave, lang, focusNote }: MapViewProps) {
         body: JSON.stringify({
           placeName,
           country,
-          locationType: `${locationType} (${characterStyle} vibe)`
+          locationType: `${locationType} (${characterStyle} vibe)`,
+          modelConfig: loadAiConfig()
         })
       });
 
@@ -541,7 +543,8 @@ export default function MapView({ onSave, lang, focusNote }: MapViewProps) {
           characterStyle,
           placeName: filterPlaceName,
           country: filterCountry,
-          locationType: filterLocationType
+          locationType: filterLocationType,
+          modelConfig: loadAiConfig()
         })
       });
 
